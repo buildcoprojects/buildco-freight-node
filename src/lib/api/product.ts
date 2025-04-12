@@ -1,40 +1,59 @@
 import type { ProductInfo } from "../types/form";
 
+// Sample AliExpress URLs for testing:
+// https://www.aliexpress.com/item/1005008364840352.html
+// https://www.aliexpress.us/item/3256805750180363.html
+// https://www.aliexpress.com/item/1005006217693724.html
+// https://www.aliexpress.us/item/_p/r1/1005004783921093.html
+// https://m.aliexpress.com/item/1005005689304155.html
+
 // Improved function to fetch product details from a URL
 // In a real application, this would call an external API or web scraper
 export async function fetchProductFromUrl(url: string): Promise<ProductInfo | null> {
   try {
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log("Fetching product from URL:", url);
 
-    // Parse AliExpress product ID from URL using different possible URL patterns
+    // Simulate API call delay with a reasonable timeout
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    // Extract product ID using various AliExpress URL patterns
     let productId: string | null = null;
 
-    // Match patterns like: aliexpress.com/item/1005008364840352.html
-    const standardPattern = /item\/(\d+)(\.html)?/;
+    // Common patterns for AliExpress URLs
+    const patterns = [
+      /item\/(\d+)(?:\.html)?/,                  // Standard format: item/1234567890.html
+      /item\/_p\/r\d+\/(\d+)(?:\.html)?/,        // US store format: item/_p/r1/1234567890.html
+      /\/i\/(\d+)(?:\.html)?/,                   // Short format: /i/1234567890.html
+      /item\/(\d+)(?:\/\?.*)?$/,                 // Format with query params
+      /(\d{10,16})(?:\.html|\?|$)/               // Generic number extraction (10-16 digits)
+    ];
 
-    // Match patterns like: aliexpress.us/item/_p/r1/1005008364840352.html
-    const usPattern = /item\/_p\/r\d+\/(\d+)(\.html)?/;
-
-    // Match patterns like: aliexpress.com/i/1005008364840352.html
-    const shortPattern = /\/i\/(\d+)(\.html)?/;
-
-    if (standardPattern.test(url)) {
-      productId = url.match(standardPattern)?.[1] || null;
-    } else if (usPattern.test(url)) {
-      productId = url.match(usPattern)?.[1] || null;
-    } else if (shortPattern.test(url)) {
-      productId = url.match(shortPattern)?.[1] || null;
+    // Try each pattern until we find a match
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        productId = match[1];
+        console.log(`Matched pattern ${pattern}, extracted ID: ${productId}`);
+        break;
+      }
     }
 
-    // If we still don't have a product ID, try a more generic pattern
+    // If no specific pattern matched, try a more generic approach
     if (!productId) {
-      const genericIdPattern = /(\d{13,16})/; // Most AliExpress IDs are 13-16 digits
-      const match = url.match(genericIdPattern);
-      if (match) productId = match[1];
+      // Look for any number with 10-16 digits in the URL
+      const genericMatch = url.match(/(\d{10,16})/);
+      if (genericMatch) {
+        productId = genericMatch[1];
+        console.log(`Using generic number matching, found ID: ${productId}`);
+      }
     }
 
-    console.log("Extracted product ID:", productId);
+    console.log("Final extracted product ID:", productId);
+
+    if (!productId) {
+      console.warn("Could not extract product ID from URL:", url);
+      return null;
+    }
 
     // Mock product catalog with sample data
     const productCatalog: Record<string, ProductInfo> = {
@@ -42,65 +61,86 @@ export async function fetchProductFromUrl(url: string): Promise<ProductInfo | nu
       "1005008364840352": {
         productTitle: "High-Performance Industrial CNC Machine",
         price: 580000,  // $580,000
-        imageUrl: "https://source.unsplash.com/300x300/?industrial+machinery",
-        estimatedWeight: 6000,  // Heavy industrial equipment
+        imageUrl: "https://source.unsplash.com/random/800x600/?industrial+machinery",
+        estimatedWeight: 6000,
         availableStock: 2
       },
-      // Additional mock products
-      "1005006217693724": {
+      // Additional mock products with real AliExpress IDs
+      "3256805750180363": {
         productTitle: "Automated Manufacturing Production Line",
         price: 750000,
-        imageUrl: "https://source.unsplash.com/300x300/?manufacturing+automation",
+        imageUrl: "https://source.unsplash.com/random/800x600/?manufacturing+automation",
         estimatedWeight: 8500,
-        availableStock: 1
+        availableStock: 3
       },
-      "1005004783921093": {
+      "1005006217693724": {
         productTitle: "Industrial Robotic Arm System",
         price: 520000,
-        imageUrl: "https://source.unsplash.com/300x300/?robotic+arm",
+        imageUrl: "https://source.unsplash.com/random/800x600/?robotic+arm",
         estimatedWeight: 1200,
         availableStock: 5
+      },
+      "1005004783921093": {
+        productTitle: "Advanced Semiconductor Equipment",
+        price: 645000,
+        imageUrl: "https://source.unsplash.com/random/800x600/?semiconductor",
+        estimatedWeight: 2200,
+        availableStock: 2
       },
       "1005005689304155": {
         productTitle: "Pharmaceutical Production Equipment",
         price: 620000,
-        imageUrl: "https://source.unsplash.com/300x300/?pharmaceutical+equipment",
+        imageUrl: "https://source.unsplash.com/random/800x600/?pharmaceutical+equipment",
         estimatedWeight: 3000,
         availableStock: 3
       }
     };
 
-    // If we have a specific product ID that matches our catalog, return it
+    // Check if the extracted ID matches any product in our catalog
     if (productId && productCatalog[productId]) {
+      console.log("Found matching product in catalog:", productCatalog[productId].productTitle);
       return productCatalog[productId];
     }
 
-    // If URL contains AliExpress/Alibaba but no matching ID in catalog,
-    // generate a product with the ID to demonstrate parsing worked
-    if ((url.includes('aliexpress') || url.includes('alibaba')) && productId) {
-      // Generate price based on extracted ID for some variability
-      const lastDigits = productId.slice(-4);
-      const basePrice = 500000 + (Number.parseInt(lastDigits) % 100) * 1000;
+    // If it's a valid AliExpress URL but we don't have it in our catalog,
+    // generate a dynamic product based on the ID
+    if ((url.toLowerCase().includes('aliexpress') || url.toLowerCase().includes('alibaba')) && productId) {
+      // Generate deterministic but varied values based on the product ID
+      const hash = productId.split('').reduce((acc, char) => {
+        return (acc * 31 + char.charCodeAt(0)) % 1000000;
+      }, 0);
 
-      return {
+      // Use the hash to generate price between $500,000 and $800,000
+      const price = 500000 + (hash % 300000);
+      const availableStock = 1 + (hash % 5);
+      const weight = 1000 + (hash % 5000);
+
+      const generatedProduct: ProductInfo = {
         productTitle: `Industrial Equipment ${productId.slice(-6)}`,
-        price: basePrice,
-        imageUrl: "https://source.unsplash.com/300x300/?industrial+equipment",
-        estimatedWeight: 2000 + (Number.parseInt(lastDigits) % 10) * 500,
-        availableStock: 1 + (Number.parseInt(lastDigits) % 5)
+        price: price,
+        imageUrl: `https://source.unsplash.com/random/800x600/?industrial+equipment&sig=${productId.slice(-4)}`,
+        estimatedWeight: weight,
+        availableStock: availableStock
       };
+
+      console.log("Generated product from ID:", generatedProduct);
+      return generatedProduct;
     }
 
-    // For other URLs, return a generic high-value product
+    // For non-AliExpress URLs or if we failed to generate a product
+    console.log("URL not recognized as AliExpress/Alibaba, returning generic product");
+
+    // Default fallback
     return {
       productTitle: "Generic High-Value Industrial Product",
       price: 520000,
-      imageUrl: "https://source.unsplash.com/300x300/?expensive+product",
+      imageUrl: "https://source.unsplash.com/random/800x600/?expensive+product",
       estimatedWeight: 1500,
       availableStock: 8
     };
   } catch (error) {
-    console.error("Error fetching product details:", error);
+    console.error("Error in fetchProductFromUrl:", error);
+    // Return null on error so we can handle it appropriately in the UI
     return null;
   }
 }
