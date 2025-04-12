@@ -1,58 +1,99 @@
 import type { ProductInfo } from "../types/form";
 
-// Mock function to fetch product details from a URL
-// In a real application, this would scrape the website or call an external API
+// Improved function to fetch product details from a URL
+// In a real application, this would call an external API or web scraper
 export async function fetchProductFromUrl(url: string): Promise<ProductInfo | null> {
-  // For demo purposes, we'll return mock data based on the URL
   try {
     // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Check if it's the specific test AliExpress URL provided in requirements
-    if (url.includes('1005008364840352')) {
-      return {
+    // Parse AliExpress product ID from URL using different possible URL patterns
+    let productId: string | null = null;
+
+    // Match patterns like: aliexpress.com/item/1005008364840352.html
+    const standardPattern = /item\/(\d+)(\.html)?/;
+
+    // Match patterns like: aliexpress.us/item/_p/r1/1005008364840352.html
+    const usPattern = /item\/_p\/r\d+\/(\d+)(\.html)?/;
+
+    // Match patterns like: aliexpress.com/i/1005008364840352.html
+    const shortPattern = /\/i\/(\d+)(\.html)?/;
+
+    if (standardPattern.test(url)) {
+      productId = url.match(standardPattern)?.[1] || null;
+    } else if (usPattern.test(url)) {
+      productId = url.match(usPattern)?.[1] || null;
+    } else if (shortPattern.test(url)) {
+      productId = url.match(shortPattern)?.[1] || null;
+    }
+
+    // If we still don't have a product ID, try a more generic pattern
+    if (!productId) {
+      const genericIdPattern = /(\d{13,16})/; // Most AliExpress IDs are 13-16 digits
+      const match = url.match(genericIdPattern);
+      if (match) productId = match[1];
+    }
+
+    console.log("Extracted product ID:", productId);
+
+    // Mock product catalog with sample data
+    const productCatalog: Record<string, ProductInfo> = {
+      // The specific test product from requirements
+      "1005008364840352": {
         productTitle: "High-Performance Industrial CNC Machine",
-        price: 580000,  // Matching the required ~$580,000 price point
+        price: 580000,  // $580,000
         imageUrl: "https://source.unsplash.com/300x300/?industrial+machinery",
         estimatedWeight: 6000,  // Heavy industrial equipment
         availableStock: 2
-      };
-    }
-
-    // Check if it's a general AliExpress URL
-    if (url.includes('aliexpress') || url.includes('alibaba')) {
-      // Extract item ID from URL if possible
-      const itemIdMatch = url.match(/item\/(\d+)/);
-      const itemId = itemIdMatch ? itemIdMatch[1] : 'generic';
-
-      // Generate price based on item ID for some variability
-      // Default to high-value product to match requirements
-      const lastDigit = Number.parseInt(itemId.slice(-1)) || 5;
-      const basePrice = 500000 + (lastDigit * 10000);
-
-      return {
-        productTitle: `High-Value Industrial Product ${itemId}`,
-        price: basePrice,
-        imageUrl: "https://source.unsplash.com/300x300/?industrial+product",
-        estimatedWeight: 1200 + (lastDigit * 100),
-        availableStock: 10
-      };
-    }
-
-    // Check if it's an Amazon URL
-    if (url.includes('amazon')) {
-      return {
-        productTitle: "Industrial Equipment Package",
-        price: 550000,
-        imageUrl: "https://source.unsplash.com/300x300/?industrial+equipment",
-        estimatedWeight: 2000,
+      },
+      // Additional mock products
+      "1005006217693724": {
+        productTitle: "Automated Manufacturing Production Line",
+        price: 750000,
+        imageUrl: "https://source.unsplash.com/300x300/?manufacturing+automation",
+        estimatedWeight: 8500,
+        availableStock: 1
+      },
+      "1005004783921093": {
+        productTitle: "Industrial Robotic Arm System",
+        price: 520000,
+        imageUrl: "https://source.unsplash.com/300x300/?robotic+arm",
+        estimatedWeight: 1200,
+        availableStock: 5
+      },
+      "1005005689304155": {
+        productTitle: "Pharmaceutical Production Equipment",
+        price: 620000,
+        imageUrl: "https://source.unsplash.com/300x300/?pharmaceutical+equipment",
+        estimatedWeight: 3000,
         availableStock: 3
+      }
+    };
+
+    // If we have a specific product ID that matches our catalog, return it
+    if (productId && productCatalog[productId]) {
+      return productCatalog[productId];
+    }
+
+    // If URL contains AliExpress/Alibaba but no matching ID in catalog,
+    // generate a product with the ID to demonstrate parsing worked
+    if ((url.includes('aliexpress') || url.includes('alibaba')) && productId) {
+      // Generate price based on extracted ID for some variability
+      const lastDigits = productId.slice(-4);
+      const basePrice = 500000 + (Number.parseInt(lastDigits) % 100) * 1000;
+
+      return {
+        productTitle: `Industrial Equipment ${productId.slice(-6)}`,
+        price: basePrice,
+        imageUrl: "https://source.unsplash.com/300x300/?industrial+equipment",
+        estimatedWeight: 2000 + (Number.parseInt(lastDigits) % 10) * 500,
+        availableStock: 1 + (Number.parseInt(lastDigits) % 5)
       };
     }
 
-    // Generic response for other URLs - ensure it meets the high price requirement
+    // For other URLs, return a generic high-value product
     return {
-      productTitle: "Generic High-Value Product",
+      productTitle: "Generic High-Value Industrial Product",
       price: 520000,
       imageUrl: "https://source.unsplash.com/300x300/?expensive+product",
       estimatedWeight: 1500,

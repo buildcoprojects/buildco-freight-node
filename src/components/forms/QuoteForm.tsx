@@ -48,6 +48,10 @@ export default function QuoteForm() {
   const [submissionStatus, setSubmissionStatus] = useState(() => canSubmit());
   const [showCourierModal, setShowCourierModal] = useState(false);
 
+  // Add new state to track form validity
+  const [isUrlFormValid, setIsUrlFormValid] = useState(false);
+  const [isManualFormValid, setIsManualFormValid] = useState(false);
+
   // Initialize forms
   const urlForm = useForm<z.infer<typeof urlUploadSchema>>({
     resolver: zodResolver(urlUploadSchema),
@@ -87,6 +91,41 @@ export default function QuoteForm() {
     },
   });
 
+  // Watch form values to check validity
+  const urlFormValues = urlForm.watch();
+  const manualFormValues = manualForm.watch();
+
+  // Check URL form validity
+  useEffect(() => {
+    const { productUrl, quantity, confirmAccurate } = urlFormValues;
+    const formFieldsValid = !!productUrl && quantity > 0 && confirmAccurate;
+    setIsUrlFormValid(formFieldsValid);
+  }, [urlFormValues]);
+
+  // Check manual form validity
+  useEffect(() => {
+    const {
+      supplierName,
+      productDescription,
+      price,
+      quantity,
+      estimatedWeight,
+      shippingFromCity,
+      confirmAccurate
+    } = manualFormValues;
+
+    const formFieldsValid =
+      !!supplierName &&
+      !!productDescription &&
+      price > 0 &&
+      quantity > 0 &&
+      estimatedWeight > 0 &&
+      !!shippingFromCity &&
+      confirmAccurate;
+
+    setIsManualFormValid(formFieldsValid);
+  }, [manualFormValues]);
+
   // For the URL form, watch the quantity to recalculate order value when it changes
   const urlQuantity = urlForm.watch("quantity");
 
@@ -102,7 +141,6 @@ export default function QuoteForm() {
 
   // Recalculate validation for URL form when quantity changes
   useEffect(() => {
-    // Only run if productInfo is not null and formType is url
     if (productInfo && formType === "url") {
       try {
         console.log("Recalculating URL form validation:", { productInfo, urlQuantity });
@@ -122,7 +160,6 @@ export default function QuoteForm() {
 
   // Recalculate validation for manual form when price or quantity changes
   useEffect(() => {
-    // Only run if formType is manual
     if (formType === "manual") {
       try {
         console.log("Recalculating manual form validation:", { manualPrice, manualQuantity });
@@ -143,7 +180,6 @@ export default function QuoteForm() {
   }, [step]);
 
   const handleUrlFormSubmit = async (data: z.infer<typeof urlUploadSchema>) => {
-    // First check if we've reached the submission cap
     const currentSubmissionStatus = canSubmit();
     if (!currentSubmissionStatus.allowed) {
       toast.error("Maximum submissions reached. Please try again later.");
@@ -151,32 +187,27 @@ export default function QuoteForm() {
     }
 
     console.log("Starting URL form submission...", data);
-
-    // Add state values debug log
     console.log("Current state before URL submission:", {
       step,
       formType,
       productInfo,
       formData,
       isLoading,
-      showCourierModal
+      showCourierModal,
+      isUrlFormValid
     });
 
     setIsLoading(true);
     try {
-      // Fetch product info from URL
       const productData = await fetchProductFromUrl(data.productUrl);
       console.log("Product data fetched:", productData);
 
       if (productData) {
         setProductInfo(productData);
-
-        // Check minimum order amount
         const validation = checkMinimumOrderAmount(productData.price, data.quantity);
         setOrderValidation(validation);
         setTotalOrderAmount(productData.price * data.quantity);
 
-        // Check stock availability
         if (productData.availableStock !== undefined) {
           const stockCheck = checkStockAvailability(data.quantity, productData.availableStock);
           setStockValidation(stockCheck);
@@ -187,14 +218,9 @@ export default function QuoteForm() {
           formType: "url"
         });
 
-        // Only proceed if both order amount and stock requirements are met
         if (validation.isValid && (!stockValidation || stockValidation.isAvailable)) {
-          // Show courier modal before advancing to shipping
           console.log("Showing courier modal");
           setShowCourierModal(true);
-
-          // The actual step advancement will happen after the modal is closed
-          // in the handleCloseCourierModal function
         } else {
           if (!validation.isValid) {
             toast.error("Order total is below the minimum requirement of $500,000");
@@ -214,7 +240,6 @@ export default function QuoteForm() {
   };
 
   const handleManualFormSubmit = async (data: z.infer<typeof manualInputSchema>) => {
-    // First check if we've reached the submission cap
     const currentSubmissionStatus = canSubmit();
     if (!currentSubmissionStatus.allowed) {
       toast.error("Maximum submissions reached. Please try again later.");
@@ -222,8 +247,6 @@ export default function QuoteForm() {
     }
 
     console.log("Starting manual form submission...");
-
-    // Check minimum order amount for manual input
     const validation = checkMinimumOrderAmount(data.price, data.quantity);
     setOrderValidation(validation);
     setTotalOrderAmount(data.price * data.quantity);
@@ -240,27 +263,16 @@ export default function QuoteForm() {
       formType: "manual"
     });
 
-    // Only proceed if order amount meets requirements
     if (validation.isValid) {
-      // Show courier modal before advancing to shipping
       setShowCourierModal(true);
-
-      // The actual step advancement will happen after the modal is closed
-      // in the handleCloseCourierModal function
     } else {
       toast.error("Order total is below the minimum requirement of $500,000");
     }
   };
 
   const handleCloseCourierModal = () => {
-    // First clear the modal state
     setShowCourierModal(false);
-
-    // Now advance to the shipping step after showing the courier modal
     console.log("Form step before:", step);
-
-    // Add a small delay to ensure the modal closing animation completes
-    // and to avoid any state update conflicts
     setTimeout(() => {
       try {
         console.log("Advancing to shipping step...");
@@ -269,7 +281,6 @@ export default function QuoteForm() {
         toast.success("Product information retrieved successfully");
       } catch (error) {
         console.error("Error advancing to shipping step:", error);
-        // Try again with a direct call
         setStep(2);
       }
     }, 300);
@@ -281,7 +292,6 @@ export default function QuoteForm() {
     setStep(3);
   };
 
-  // Helper to format currency
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -291,14 +301,10 @@ export default function QuoteForm() {
 
   const handleUpdateUrlQuantity = (value: number) => {
     urlForm.setValue("quantity", value);
-
     if (productInfo) {
-      // Re-check minimum order amount
       const validation = checkMinimumOrderAmount(productInfo.price, value);
       setOrderValidation(validation);
       setTotalOrderAmount(productInfo.price * value);
-
-      // Re-check stock availability
       if (productInfo.availableStock !== undefined) {
         const stockCheck = checkStockAvailability(value, productInfo.availableStock);
         setStockValidation(stockCheck);
@@ -308,15 +314,12 @@ export default function QuoteForm() {
 
   const handleUpdateManualQuantity = (value: number) => {
     manualForm.setValue("quantity", value);
-
-    // Re-check minimum order amount for manual entry
     const validation = checkMinimumOrderAmount(manualPrice || 0, value);
     setOrderValidation(validation);
     setTotalOrderAmount((manualPrice || 0) * value);
   };
 
   const renderFormStep = () => {
-    // Check if submission cap is reached before rendering the form
     if (step === 1 && !submissionStatus.allowed) {
       return (
         <Card>
@@ -468,6 +471,7 @@ export default function QuoteForm() {
                         className="w-full"
                         disabled={
                           isLoading ||
+                          !isUrlFormValid ||
                           (orderValidation && !orderValidation.isValid) ||
                           (stockValidation && !stockValidation.isAvailable)
                         }
@@ -658,7 +662,7 @@ export default function QuoteForm() {
                       <Button
                         type="submit"
                         className="w-full"
-                        disabled={orderValidation && !orderValidation.isValid}
+                        disabled={!isManualFormValid || (orderValidation && !orderValidation.isValid)}
                       >
                         Continue to Shipping
                       </Button>
@@ -715,7 +719,6 @@ export default function QuoteForm() {
         </div>
       </div>
 
-      {/* Courier Modal - only render if on client side */}
       {typeof window !== 'undefined' && (
         <CourierModal
           isOpen={showCourierModal}
