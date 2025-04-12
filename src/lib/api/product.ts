@@ -85,27 +85,40 @@ export function extractProductId(url: string): string | null {
 }
 
 /**
- * Fetch product metadata - now using fallback-only approach for static site compatibility
- * Note: Real scraping would be implemented in a proper Netlify function
+ * Fetch product metadata using the Netlify serverless function
+ * Falls back to client-side generation if the function fails
  */
 export async function fetchProductMetadata(url: string): Promise<ProductInfo | null> {
   try {
-    console.log("Fetching product metadata from URL:", url);
+    console.log("Fetching product metadata from URL using Netlify function:", url);
     
-    // We can't use JSDOM or axios in the browser environment with Next.js static export
-    // Instead, we'll just extract the product ID and generate fallback data
-    // In a real implementation, this would be a serverless function
+    // Call our Netlify serverless function to extract metadata
+    const response = await fetch('/.netlify/functions/extract-product-metadata', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ url }),
+    });
     
-    // Extract product ID from URL
+    if (!response.ok) {
+      throw new Error(`Failed to fetch metadata: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log("Product data from Netlify function:", data);
+    
+    // Check if we got valid data back
+    if (data && data.productTitle && data.price) {
+      return data as ProductInfo;
+    }
+    
+    // If the function didn't return valid data, fall back to local generation
+    console.warn("Netlify function returned invalid data, using fallback");
     const productId = extractProductId(url) || Math.random().toString(36).substring(7);
-    
-    // Generate product info from ID
-    const productInfo = generateFallbackProduct(productId);
-    console.log("Generated product info for URL:", url, productInfo);
-    
-    return productInfo;
+    return generateFallbackProduct(productId);
   } catch (error) {
-    console.error("Error generating product metadata:", error);
+    console.error("Error fetching product metadata:", error);
     
     // Generate fallback product info if anything fails
     const productId = extractProductId(url) || Math.random().toString(36).substring(7);
@@ -164,21 +177,21 @@ function generateFallbackProduct(productId: string): ProductInfo {
 
 /**
  * Fetch product details from URL
- * This uses the fallback generator for compatibility with static site generation
+ * Uses Netlify serverless function for real metadata extraction with fallback
  */
 export async function fetchProductFromUrl(url: string): Promise<ProductInfo | null> {
   try {
     console.log("Fetching product from URL:", url);
     
-    // Directly use the fallback approach which is compatible with static builds
+    // Use the Netlify function-based metadata extraction with fallback
     const product = await fetchProductMetadata(url);
     
     if (product) {
-      console.log("Successfully generated product from URL:", product);
+      console.log("Successfully fetched product from URL:", product);
       return product;
     }
     
-    // If somehow that failed, try one more direct approach
+    // If somehow that failed, try direct fallback generation
     const productId = extractProductId(url);
     
     if (!productId) {
