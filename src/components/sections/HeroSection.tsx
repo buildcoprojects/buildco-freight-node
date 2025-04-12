@@ -19,7 +19,7 @@ function HeroSection() {
         <div className="flex flex-col items-center space-y-4 text-center">
           <div className="space-y-2">
             <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl">
-              Can't Import From China Direct? We'll Reroute It Securely Through Australia.
+              Reroute Your High-Value Orders via Australia
             </h1>
             <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl">
               Upload your supplier link and let us take care of the rest.
@@ -31,7 +31,7 @@ function HeroSection() {
               onClick={scrollToQuote}
               className="inline-flex items-center"
             >
-              Start a Quote
+              Reroute Your Order Now
               <ArrowDownIcon className="ml-2 h-4 w-4" />
             </Button>
           </div>

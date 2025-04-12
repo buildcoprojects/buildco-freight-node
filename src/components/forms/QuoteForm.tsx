@@ -146,17 +146,39 @@ export default function QuoteForm() {
     };
   }, [productUrl, debouncedUrl]);
 
-  // Effect to fetch product info when URL changes and is valid
+  // Enhanced effect to always fetch and display product info when URL changes
   useEffect(() => {
-    if (!debouncedUrl || productFetchLoading || debouncedUrl === previousUrlRef.current) return;
+    if (!debouncedUrl || productFetchLoading) return;
+
+    // Only skip if exactly the same URL and we already have product info
+    if (debouncedUrl === previousUrlRef.current && productInfo) return;
 
     const fetchProductInfo = async () => {
       try {
-        // Simple URL validation
-        if (!debouncedUrl.startsWith('http')) return;
+        // More comprehensive URL validation for AliExpress or DHgate
+        const isValidUrl = (url: string): boolean => {
+          // Must start with http or https
+          if (!url.startsWith('http')) return false;
+          
+          // Check for minimum length and domain name
+          if (url.length < 15 || !url.includes('.')) return false;
+          
+          // Check if it's an AliExpress or DHgate URL (main targets for our app)
+          const isAliExpress = url.includes('aliexpress.com') || url.includes('aliexpress.us');
+          const isDHgate = url.includes('dhgate.com');
+          
+          // We'll also accept other URLs but log them
+          if (!isAliExpress && !isDHgate) {
+            console.log("URL is not from AliExpress or DHgate, but will attempt extraction anyway");
+          }
+          
+          return true;
+        };
 
-        // Only fetch if URL is long enough and contains a domain name
-        if (debouncedUrl.length < 15 || !debouncedUrl.includes('.')) return;
+        if (!isValidUrl(debouncedUrl)) {
+          console.log("URL validation failed, not fetching product info");
+          return;
+        }
 
         // Show loading state
         setProductFetchLoading(true);
@@ -170,50 +192,46 @@ export default function QuoteForm() {
         if (productData?.productTitle) {
           console.log("Auto-fetch successful:", productData);
 
-          // Update the stable reference to prevent re-renders
-          stableProductInfoRef.current = productData;
-
-          // Update state in a single operation to prevent flickering
+          // Always update the product info state
           setProductInfo(productData);
           setUrlProcessed(true);
+          setProductDetailsVisible(true);
+          setShowProductDetails(true);
 
-          // Only set this to true if we're newly showing the details
-          if (!productDetailsVisible) {
-            setProductDetailsVisible(true);
-            setShowProductDetails(true);
+          // Update validation info
+          const validation = checkMinimumOrderAmount(productData.price, urlQuantity);
+          setOrderValidation(validation);
+          setTotalOrderAmount(productData.price * urlQuantity);
 
-            // Calculate validation info
-            const validation = checkMinimumOrderAmount(productData.price, urlQuantity);
-            setOrderValidation(validation);
-            setTotalOrderAmount(productData.price * urlQuantity);
-
-            if (productData.availableStock !== undefined) {
-              const stockCheck = checkStockAvailability(urlQuantity, productData.availableStock);
-              setStockValidation(stockCheck);
-            }
-
-            toast.success("Product information retrieved");
-
-            // Scroll to product details after a short delay
-            setTimeout(() => {
-              if (productDetailsRef.current) {
-                productDetailsRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              }
-            }, 300);
+          if (productData.availableStock !== undefined) {
+            const stockCheck = checkStockAvailability(urlQuantity, productData.availableStock);
+            setStockValidation(stockCheck);
           }
+
+          toast.success("Product information retrieved");
+
+          // Scroll to product details after a short delay
+          setTimeout(() => {
+            if (productDetailsRef.current) {
+              productDetailsRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }, 300);
         } else {
           console.warn("Could not fetch product data automatically");
           setUrlProcessed(false);
+          setShowProductDetails(false);
+          toast.error("Could not retrieve product information. Please try another URL.");
         }
       } catch (error) {
         console.error("Error auto-fetching product:", error);
+        toast.error("Error fetching product data. Please try again.");
       } finally {
         setProductFetchLoading(false);
       }
     };
 
     fetchProductInfo();
-  }, [debouncedUrl, urlQuantity, productDetailsVisible, productFetchLoading]);
+  }, [debouncedUrl, urlQuantity]);
 
   // State to track payment section visibility
   const [isPaymentSectionUnlocked, setIsPaymentSectionUnlocked] = useState(false);
@@ -1073,7 +1091,7 @@ export default function QuoteForm() {
         <div className="flex flex-col items-center space-y-4 text-center">
           <div className="space-y-2">
             <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl dark:text-dark-text">
-              Get Your Quote
+              Reroute Your Order Now
             </h2>
             <p className="max-w-[700px] text-gray-500 dark:text-dark-muted-text md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
               Enter your product details to get an instant quote for our freight forwarding service.
