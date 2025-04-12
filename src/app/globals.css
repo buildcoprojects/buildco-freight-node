@@ -32,30 +32,42 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 224 100% 50%; /* Blue accent #0040FF */
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224 100% 50%; /* Match primary */
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    /* Updated dark mode colors for better contrast and visual appeal */
+    --background: 0 0% 7%; /* #121212 - softer black background */
+    --foreground: 0 0% 88%; /* #E0E0E0 - softer white text */
+
+    --card: 0 0% 12%; /* #1E1E1E - slightly lighter than background */
+    --card-foreground: 0 0% 88%; /* #E0E0E0 - matching foreground */
+
+    --popover: 0 0% 12%; /* #1E1E1E - match card */
+    --popover-foreground: 0 0% 88%; /* #E0E0E0 - match foreground */
+
+    --primary: 220 80% 60%; /* #3B82F6 - brighter blue that works on dark bg */
+    --primary-foreground: 0 0% 100%; /* White text on primary buttons */
+
+    --secondary: 215 15% 15%; /* Slightly blue-tinted dark for secondary elements */
+    --secondary-foreground: 0 0% 95%; /* Light text on secondary elements */
+
+    --muted: 210 8% 18%; /* #23272F - subtle blue-gray for muted areas */
+    --muted-foreground: 215 15% 65%; /* #A1AFC0 - muted text with blue tint */
+
+    --accent: 217 10% 25%; /* Slightly blue-tinted accent bg */
+    --accent-foreground: 0 0% 95%; /* Light text on accent */
+
+    --destructive: 0 70% 40%; /* Deeper red that works on dark */
+    --destructive-foreground: 0 0% 95%; /* Light text on destructive */
+
+    --border: 217 10% 20%; /* #2D3748 - subtle borders */
+    --input: 215 15% 15%; /* Match secondary for input fields */
+
+    --ring: 220 80% 60%; /* Match primary for focus rings */
+
+    /* Updated chart colors for dark mode that stand out better */
+    --chart-1: 220 80% 60%;
+    --chart-2: 160 70% 50%;
+    --chart-3: 30 90% 60%;
+    --chart-4: 280 75% 65%;
+    --chart-5: 340 80% 65%;
   }
 }
 
@@ -65,5 +77,67 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Add animation for product card */
+  .product-card-animation {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Improved focus states for dark mode */
+  .dark input:focus,
+  .dark textarea:focus,
+  .dark select:focus {
+    @apply ring-2 ring-primary/50 ring-offset-1 ring-offset-background;
+  }
+
+  /* Fix checkbox appearance in dark mode */
+  .dark [data-state="checked"].checkbox {
+    @apply bg-primary border-primary text-primary-foreground;
+  }
+
+  /* Fix button hover styles in dark mode */
+  .dark .btn-primary:hover,
+  .dark [data-variant="default"]:hover {
+    @apply bg-primary/80 text-primary-foreground;
+  }
+
+  /* Enhanced input styling for dark mode */
+  .dark input,
+  .dark textarea,
+  .dark select {
+    @apply bg-secondary border-border text-foreground placeholder:text-muted-foreground;
+  }
+
+  /* Improve card styling in dark mode */
+  .dark .card {
+    @apply bg-card border-border shadow-md shadow-black/10;
+  }
+
+  /* Fix transition issues between light and dark mode */
+  body,
+  .card,
+  input,
+  button,
+  .checkbox,
+  select,
+  textarea {
+    @apply transition-colors duration-200;
+  }
+
+  /* Add subtle hover effect to cards in dark mode */
+  .dark .card:hover {
+    @apply border-primary/20;
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type * as z from "zod";
@@ -48,11 +48,29 @@ export default function QuoteForm() {
   const [totalOrderAmount, setTotalOrderAmount] = useState<number>(0);
   const [submissionStatus, setSubmissionStatus] = useState(() => canSubmit());
   const [showCourierModal, setShowCourierModal] = useState(false);
-  const [urlProcessed, setUrlProcessed] = useState(false); // Track if URL has been processed
+  const [urlProcessed, setUrlProcessed] = useState(false);
+
+  // Add reference to product details section for scrolling
+  const productDetailsRef = useRef<HTMLDivElement>(null);
+  const confirmCheckboxRef = useRef<HTMLDivElement>(null);
+
+  // Enhanced stable reference to prevent re-renders
+  const stableProductInfoRef = useRef<typeof productInfo>(null);
+  const previousUrlRef = useRef<string>("");
+
+  // Track if we've already shown product details to prevent UI flicker
+  const [productDetailsVisible, setProductDetailsVisible] = useState(false);
+
+  // Add state to ensure product section remains displayed after a successful fetch
+  const [showProductDetails, setShowProductDetails] = useState(false);
 
   // Add new state to track form validity
   const [isUrlFormValid, setIsUrlFormValid] = useState(false);
   const [isManualFormValid, setIsManualFormValid] = useState(false);
+
+  // Create a debounced URL value to prevent excessive API calls
+  const [debouncedUrl, setDebouncedUrl] = useState("");
+  const urlDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize forms
   const urlForm = useForm<z.infer<typeof urlUploadSchema>>({
@@ -108,41 +126,81 @@ export default function QuoteForm() {
   const confirmAccurate = urlForm.watch("confirmAccurate");
   const urlQuantity = urlForm.watch("quantity");
 
+  // Debounce the URL change to prevent excessive API calls
+  useEffect(() => {
+    if (urlDebounceTimerRef.current) {
+      clearTimeout(urlDebounceTimerRef.current);
+    }
+
+    // Only update debounced URL if it's different from the current one
+    if (productUrl !== debouncedUrl) {
+      urlDebounceTimerRef.current = setTimeout(() => {
+        setDebouncedUrl(productUrl);
+      }, 800);
+    }
+
+    return () => {
+      if (urlDebounceTimerRef.current) {
+        clearTimeout(urlDebounceTimerRef.current);
+      }
+    };
+  }, [productUrl, debouncedUrl]);
+
   // Effect to fetch product info when URL changes and is valid
   useEffect(() => {
-    const fetchProductInfo = async () => {
-      if (!productUrl || productFetchLoading) return;
+    if (!debouncedUrl || productFetchLoading || debouncedUrl === previousUrlRef.current) return;
 
+    const fetchProductInfo = async () => {
       try {
         // Simple URL validation
-        if (!productUrl.startsWith('http')) return;
+        if (!debouncedUrl.startsWith('http')) return;
 
         // Only fetch if URL is long enough and contains a domain name
-        if (productUrl.length < 15 || !productUrl.includes('.')) return;
+        if (debouncedUrl.length < 15 || !debouncedUrl.includes('.')) return;
 
         // Show loading state
         setProductFetchLoading(true);
-        setProductInfo(null); // Clear previous product
 
-        console.log("Auto-fetching product info for URL:", productUrl);
-        const productData = await fetchProductFromUrl(productUrl);
+        // Store current URL to prevent duplicate fetches
+        previousUrlRef.current = debouncedUrl;
 
-        if (productData) {
+        console.log("Auto-fetching product info for URL:", debouncedUrl);
+        const productData = await fetchProductFromUrl(debouncedUrl);
+
+        if (productData?.productTitle) {
           console.log("Auto-fetch successful:", productData);
+
+          // Update the stable reference to prevent re-renders
+          stableProductInfoRef.current = productData;
+
+          // Update state in a single operation to prevent flickering
           setProductInfo(productData);
           setUrlProcessed(true);
 
-          // Calculate validation info
-          const validation = checkMinimumOrderAmount(productData.price, urlQuantity);
-          setOrderValidation(validation);
-          setTotalOrderAmount(productData.price * urlQuantity);
+          // Only set this to true if we're newly showing the details
+          if (!productDetailsVisible) {
+            setProductDetailsVisible(true);
+            setShowProductDetails(true);
 
-          if (productData.availableStock !== undefined) {
-            const stockCheck = checkStockAvailability(urlQuantity, productData.availableStock);
-            setStockValidation(stockCheck);
+            // Calculate validation info
+            const validation = checkMinimumOrderAmount(productData.price, urlQuantity);
+            setOrderValidation(validation);
+            setTotalOrderAmount(productData.price * urlQuantity);
+
+            if (productData.availableStock !== undefined) {
+              const stockCheck = checkStockAvailability(urlQuantity, productData.availableStock);
+              setStockValidation(stockCheck);
+            }
+
+            toast.success("Product information retrieved");
+
+            // Scroll to product details after a short delay
+            setTimeout(() => {
+              if (productDetailsRef.current) {
+                productDetailsRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }, 300);
           }
-
-          toast.success("Product information retrieved");
         } else {
           console.warn("Could not fetch product data automatically");
           setUrlProcessed(false);
@@ -154,13 +212,8 @@ export default function QuoteForm() {
       }
     };
 
-    // Add a debounce to avoid too many requests
-    const timer = setTimeout(() => {
-      fetchProductInfo();
-    }, 800);
-
-    return () => clearTimeout(timer);
-  }, [productUrl, productFetchLoading, urlQuantity]); // Add all dependencies
+    fetchProductInfo();
+  }, [debouncedUrl, urlQuantity, productDetailsVisible, productFetchLoading]);
 
   // Check URL form validity
   useEffect(() => {
@@ -184,7 +237,14 @@ export default function QuoteForm() {
     });
 
     setIsUrlFormValid(formFieldsValid);
-  }, [urlProcessed, productInfo, urlFormValues, confirmAccurate]); // Add confirmAccurate dependency
+
+    // If form becomes valid, scroll to the button
+    if (formFieldsValid && confirmCheckboxRef.current) {
+      setTimeout(() => {
+        confirmCheckboxRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  }, [urlProcessed, productInfo, urlFormValues, confirmAccurate]);
 
   // Check manual form validity
   useEffect(() => {
@@ -555,8 +615,12 @@ export default function QuoteForm() {
                         )}
                       />
 
-                      {productInfo && (
-                        <div className="rounded-lg border p-4 mt-4 dark:border-gray-700 dark:bg-gray-800/50">
+                      {productInfo && showProductDetails && (
+                        <div
+                          ref={productDetailsRef}
+                          className="rounded-lg border p-4 mt-4 dark:border-gray-700 dark:bg-gray-800/50 transition-opacity duration-300"
+                          style={{ opacity: productDetailsVisible ? 1 : 0 }}
+                        >
                           <h3 className="text-sm font-medium mb-2">Product Details</h3>
                           <div className="flex items-center gap-4 mb-3">
                             {productInfo.imageUrl && (
@@ -624,7 +688,7 @@ export default function QuoteForm() {
                         control={urlForm.control}
                         name="confirmAccurate"
                         render={({ field }) => (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 dark:border-gray-700">
+                          <FormItem ref={confirmCheckboxRef} className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 dark:border-gray-700">
                             <FormControl>
                               <Checkbox
                                 checked={field.value}

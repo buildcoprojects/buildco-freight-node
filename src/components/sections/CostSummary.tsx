@@ -43,7 +43,7 @@ export function CostSummary({ productInfo, formData, selectedShippingOption, onB
       selectedShippingOption,
       submissionStatus
     });
-  }, []);
+  }, [productInfo, formData, selectedShippingOption, submissionStatus]);
 
   // Check submission cap on component load
   useEffect(() => {
