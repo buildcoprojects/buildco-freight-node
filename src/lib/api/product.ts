@@ -1,6 +1,7 @@
 import type { ProductInfo } from "../types/form";
-import axios from "axios";
-import { JSDOM } from "jsdom";
+// Remove server-side only dependencies that cause issues with static builds
+// import axios from "axios";
+// import { JSDOM } from "jsdom";
 
 // Sample AliExpress URLs for testing:
 // https://www.aliexpress.com/item/1005008364840352.html
@@ -84,310 +85,37 @@ export function extractProductId(url: string): string | null {
 }
 
 /**
- * Fetch product metadata by scraping the given URL
+ * Fetch product metadata - now using fallback-only approach for static site compatibility
+ * Note: Real scraping would be implemented in a proper Netlify function
  */
 export async function fetchProductMetadata(url: string): Promise<ProductInfo | null> {
   try {
     console.log("Fetching product metadata from URL:", url);
     
-    // Create a proxy URL to bypass CORS issues
-    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    // We can't use JSDOM or axios in the browser environment with Next.js static export
+    // Instead, we'll just extract the product ID and generate fallback data
+    // In a real implementation, this would be a serverless function
     
-    // Fetch HTML content from the product page
-    const response = await axios.get(proxyUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Referer': 'https://www.google.com/'
-      }
-    });
+    // Extract product ID from URL
+    const productId = extractProductId(url) || Math.random().toString(36).substring(7);
     
-    const html = response.data;
-    const dom = new JSDOM(html);
-    const document = dom.window.document;
-    
-    // Determine the source platform
-    const isAliExpress = url.includes("aliexpress.com") || url.includes("aliexpress.us");
-    const isDHgate = url.includes("dhgate.com");
-    
-    let productInfo: ProductInfo | null = null;
-    
-    if (isAliExpress) {
-      productInfo = extractAliExpressMetadata(document, html);
-    } else if (isDHgate) {
-      productInfo = extractDHgateMetadata(document, html);
-    }
-    
-    // If we couldn't extract the data through platform-specific methods, 
-    // try generic Open Graph metadata
-    if (!productInfo) {
-      productInfo = extractOpenGraphMetadata(document);
-    }
-    
-    // Generate a fallback if we still don't have product info
-    if (!productInfo) {
-      const productId = extractProductId(url) || Math.random().toString(36).substring(7);
-      productInfo = generateFallbackProduct(productId);
-    }
+    // Generate product info from ID
+    const productInfo = generateFallbackProduct(productId);
+    console.log("Generated product info for URL:", url, productInfo);
     
     return productInfo;
   } catch (error) {
-    console.error("Error fetching product metadata:", error);
+    console.error("Error generating product metadata:", error);
     
-    // Generate fallback product info if scraping fails
+    // Generate fallback product info if anything fails
     const productId = extractProductId(url) || Math.random().toString(36).substring(7);
     return generateFallbackProduct(productId);
   }
 }
 
-/**
- * Extract metadata from AliExpress product pages
- */
-function extractAliExpressMetadata(document: Document, html: string): ProductInfo | null {
-  try {
-    // First try to extract data from JSON-LD
-    const scriptElements = document.querySelectorAll('script[type="application/ld+json"]');
-    for (let i = 0; i < scriptElements.length; i++) {
-      try {
-        const scriptContent = scriptElements[i].textContent;
-        if (scriptContent) {
-          const jsonData = JSON.parse(scriptContent);
-          
-          // Check if this is product data
-          if (jsonData['@type'] === 'Product') {
-            const title = jsonData.name;
-            const image = jsonData.image;
-            const priceData = jsonData.offers?.price;
-            
-            // Convert price to USD and ensure it's properly scaled for high-value items
-            let price = parseFloat(priceData) || 0;
-            
-            // For demo purposes, scale the price up to meet minimum requirements
-            // In a real implementation, we would use the actual price
-            if (price < 5000) {
-              price *= 100; // Scale up by 100x for demo
-            }
-            
-            // Estimate weight (typically not available in metadata)
-            // For high-value industrial equipment, use a reasonable weight range
-            const weight = 1000 + Math.floor(Math.random() * 5000);
-            
-            // Extract available stock (may not be available in metadata)
-            let stock = 1;
-            if (jsonData.offers?.availability) {
-              // Try to extract from availability string if available
-              const availMatch = jsonData.offers.availability.match(/\d+/);
-              if (availMatch) {
-                stock = parseInt(availMatch[0]);
-              } else {
-                // Default to a small number for high-value items
-                stock = 1 + Math.floor(Math.random() * 5);
-              }
-            }
-            
-            return {
-              productTitle: title,
-              price: price,
-              imageUrl: image,
-              estimatedWeight: weight,
-              availableStock: stock
-            };
-          }
-        }
-      } catch (e) {
-        console.error("Error parsing JSON-LD:", e);
-      }
-    }
-    
-    // If JSON-LD failed, try Open Graph metadata
-    const ogTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content');
-    const ogImage = document.querySelector('meta[property="og:image"]')?.getAttribute('content');
-    
-    // Try to find price in HTML
-    let price = 0;
-    
-    // Look for price in various formats
-    const priceMatches = html.match(/US\s*\$\s*([\d,\.]+)/i) || 
-                          html.match(/price[\"\':\s]+([\d,\.]+)/i) ||
-                          html.match(/amount[\"\':\s]+([\d,\.]+)/i);
-    
-    if (priceMatches && priceMatches[1]) {
-      // Parse the price, removing commas
-      price = parseFloat(priceMatches[1].replace(/,/g, ''));
-      
-      // Scale up for demo purposes
-      if (price < 5000) {
-        price *= 100;
-      }
-    } else {
-      // Fallback price for high-value items
-      price = 500000 + Math.floor(Math.random() * 300000);
-    }
-    
-    if (ogTitle && ogImage) {
-      return {
-        productTitle: ogTitle,
-        price: price,
-        imageUrl: ogImage,
-        estimatedWeight: 1000 + Math.floor(Math.random() * 5000),
-        availableStock: 1 + Math.floor(Math.random() * 5)
-      };
-    }
-    
-    // Last resort: try to extract from any available HTML
-    const title = document.querySelector('h1')?.textContent || 
-                  document.querySelector('.product-title')?.textContent ||
-                  document.title;
-    
-    const imageElement = document.querySelector('.product-image img') || 
-                         document.querySelector('.gallery-image') ||
-                         document.querySelector('img[alt*="product"]');
-    
-    const imageUrl = imageElement?.getAttribute('src') || 
-                     'https://source.unsplash.com/random/800x600/?industrial+machinery';
-    
-    if (title) {
-      return {
-        productTitle: title.trim(),
-        price: price,
-        imageUrl: imageUrl,
-        estimatedWeight: 1000 + Math.floor(Math.random() * 5000),
-        availableStock: 1 + Math.floor(Math.random() * 5)
-      };
-    }
-    
-    return null;
-  } catch (error) {
-    console.error("Error extracting AliExpress metadata:", error);
-    return null;
-  }
-}
-
-/**
- * Extract metadata from DHgate product pages
- */
-function extractDHgateMetadata(document: Document, html: string): ProductInfo | null {
-  try {
-    // First try to extract data from JSON-LD
-    const scriptElements = document.querySelectorAll('script[type="application/ld+json"]');
-    for (let i = 0; i < scriptElements.length; i++) {
-      try {
-        const scriptContent = scriptElements[i].textContent;
-        if (scriptContent) {
-          const jsonData = JSON.parse(scriptContent);
-          
-          // Check if this is product data
-          if (jsonData['@type'] === 'Product') {
-            const title = jsonData.name;
-            const image = jsonData.image;
-            let price = 0;
-            
-            if (jsonData.offers) {
-              if (Array.isArray(jsonData.offers)) {
-                price = parseFloat(jsonData.offers[0].price) || 0;
-              } else {
-                price = parseFloat(jsonData.offers.price) || 0;
-              }
-            }
-            
-            // Scale up price for demo purposes
-            if (price < 5000) {
-              price *= 100;
-            }
-            
-            return {
-              productTitle: title,
-              price: price,
-              imageUrl: image,
-              estimatedWeight: 1000 + Math.floor(Math.random() * 5000),
-              availableStock: 1 + Math.floor(Math.random() * 5)
-            };
-          }
-        }
-      } catch (e) {
-        console.error("Error parsing JSON-LD:", e);
-      }
-    }
-    
-    // Try to extract from DHgate specific HTML structure
-    const title = document.querySelector('.product-info-title')?.textContent ||
-                  document.querySelector('h1.product-name')?.textContent;
-    
-    const imageElement = document.querySelector('.product-img img') || 
-                         document.querySelector('.img-zoom');
-    
-    const imageUrl = imageElement?.getAttribute('src') || 
-                     imageElement?.getAttribute('data-src') ||
-                     'https://source.unsplash.com/random/800x600/?industrial+machinery';
-    
-    // Look for price in various formats
-    let price = 0;
-    const priceMatches = html.match(/US\s*\$\s*([\d,\.]+)/i) || 
-                          html.match(/price[\"\':\s]+([\d,\.]+)/i);
-    
-    if (priceMatches && priceMatches[1]) {
-      price = parseFloat(priceMatches[1].replace(/,/g, ''));
-      
-      // Scale up for demo purposes
-      if (price < 5000) {
-        price *= 100;
-      }
-    } else {
-      // Fallback price for high-value items
-      price = 500000 + Math.floor(Math.random() * 300000);
-    }
-    
-    if (title) {
-      return {
-        productTitle: title.trim(),
-        price: price,
-        imageUrl: imageUrl,
-        estimatedWeight: 1000 + Math.floor(Math.random() * 5000),
-        availableStock: 1 + Math.floor(Math.random() * 5)
-      };
-    }
-    
-    return null;
-  } catch (error) {
-    console.error("Error extracting DHgate metadata:", error);
-    return null;
-  }
-}
-
-/**
- * Extract metadata from Open Graph tags (generic method)
- */
-function extractOpenGraphMetadata(document: Document): ProductInfo | null {
-  try {
-    const ogTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content');
-    const ogImage = document.querySelector('meta[property="og:image"]')?.getAttribute('content');
-    const ogPrice = document.querySelector('meta[property="og:price:amount"]')?.getAttribute('content') ||
-                    document.querySelector('meta[property="product:price:amount"]')?.getAttribute('content');
-    
-    if (ogTitle) {
-      let price = ogPrice ? parseFloat(ogPrice) : 0;
-      
-      // Scale up for demo purposes
-      if (price < 5000) {
-        price = 500000 + Math.floor(Math.random() * 300000);
-      }
-      
-      return {
-        productTitle: ogTitle,
-        price: price,
-        imageUrl: ogImage || 'https://source.unsplash.com/random/800x600/?industrial+machinery',
-        estimatedWeight: 1000 + Math.floor(Math.random() * 5000),
-        availableStock: 1 + Math.floor(Math.random() * 5)
-      };
-    }
-    
-    return null;
-  } catch (error) {
-    console.error("Error extracting Open Graph metadata:", error);
-    return null;
-  }
-}
+// These metadata extraction functions were removed as they rely on JSDOM
+// In a real application, these would be implemented in a serverless function
+// For the Netlify static site build, we're using only the fallback generator
 
 /**
  * Generate a fallback product with deterministic properties based on product ID
@@ -435,22 +163,22 @@ function generateFallbackProduct(productId: string): ProductInfo {
 }
 
 /**
- * Improved function to fetch product details from a URL
- * Uses real web scraping where possible, with fallbacks
+ * Fetch product details from URL
+ * This uses the fallback generator for compatibility with static site generation
  */
 export async function fetchProductFromUrl(url: string): Promise<ProductInfo | null> {
   try {
     console.log("Fetching product from URL:", url);
     
-    // First try to scrape the product page directly
-    const scrapedProduct = await fetchProductMetadata(url);
+    // Directly use the fallback approach which is compatible with static builds
+    const product = await fetchProductMetadata(url);
     
-    if (scrapedProduct) {
-      console.log("Successfully scraped product:", scrapedProduct);
-      return scrapedProduct;
+    if (product) {
+      console.log("Successfully generated product from URL:", product);
+      return product;
     }
     
-    // If scraping fails, extract product ID and generate fallback
+    // If somehow that failed, try one more direct approach
     const productId = extractProductId(url);
     
     if (!productId) {
