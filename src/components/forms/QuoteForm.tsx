@@ -17,7 +17,7 @@ import { fetchProductFromUrl, checkMinimumOrderAmount, checkStockAvailability } 
 import { ShippingSection } from "../sections/ShippingSection";
 import { CostSummary } from "../sections/CostSummary";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { canSubmit } from "@/lib/api/submissionTracker";
@@ -215,38 +215,57 @@ export default function QuoteForm() {
     fetchProductInfo();
   }, [debouncedUrl, urlQuantity, productDetailsVisible, productFetchLoading]);
 
-  // Check URL form validity
+  // State to track payment section visibility
+  const [isPaymentSectionUnlocked, setIsPaymentSectionUnlocked] = useState(false);
+  const paymentSectionRef = useRef<HTMLDivElement>(null);
+
+  // Check URL form validity and progressively disclose payment section
   useEffect(() => {
     const { quantity } = urlFormValues;
 
     // Form is valid when we have:
     // 1. A valid product (from URL processing)
     // 2. A quantity greater than 0
-    // 3. User has checked the confirmation checkbox
+    // 3. Order value meets the minimum requirement
+    // 4. User has checked the confirmation checkbox
+    const meetsPriceThreshold = orderValidation?.isValid === true;
     const formFieldsValid = urlProcessed &&
                            productInfo !== null &&
                            quantity > 0 &&
-                           confirmAccurate === true;
+                           confirmAccurate === true &&
+                           meetsPriceThreshold;
 
     console.log("URL form validity check:", {
       urlProcessed,
       hasProductInfo: productInfo !== null,
       quantity,
+      meetsPriceThreshold,
       confirmAccurate,
       formFieldsValid
     });
 
     setIsUrlFormValid(formFieldsValid);
 
-    // If form becomes valid, scroll to the button
-    if (formFieldsValid && confirmCheckboxRef.current) {
+    // Set payment section visibility based on order value threshold
+    const shouldUnlockPayment = productInfo !== null && 
+                               quantity > 0 && 
+                               meetsPriceThreshold;
+
+    setIsPaymentSectionUnlocked(shouldUnlockPayment);
+
+    // If payment section is newly unlocked, scroll to it after a short delay
+    if (shouldUnlockPayment && !isPaymentSectionUnlocked && confirmCheckboxRef.current) {
       setTimeout(() => {
         confirmCheckboxRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
+      }, 300);
     }
-  }, [urlProcessed, productInfo, urlFormValues, confirmAccurate]);
+  }, [urlProcessed, productInfo, urlFormValues, confirmAccurate, orderValidation, isPaymentSectionUnlocked]);
 
-  // Check manual form validity
+  // Manual form payment section state
+  const [isManualPaymentSectionUnlocked, setIsManualPaymentSectionUnlocked] = useState(false);
+  const manualConfirmCheckboxRef = useRef<HTMLDivElement>(null);
+
+  // Check manual form validity and handle progressive disclosure
   useEffect(() => {
     const {
       supplierName,
@@ -258,6 +277,9 @@ export default function QuoteForm() {
       confirmAccurate
     } = manualFormValues;
 
+    // Check if price threshold is met
+    const meetsPriceThreshold = orderValidation?.isValid === true;
+
     const formFieldsValid =
       !!supplierName &&
       !!productDescription &&
@@ -265,10 +287,26 @@ export default function QuoteForm() {
       quantity > 0 &&
       estimatedWeight > 0 &&
       !!shippingFromCity &&
-      confirmAccurate;
+      confirmAccurate &&
+      meetsPriceThreshold;
 
     setIsManualFormValid(formFieldsValid);
-  }, [manualFormValues]);
+
+    // Set payment section visibility based on order value threshold
+    const shouldUnlockPayment = 
+      price > 0 && 
+      quantity > 0 && 
+      meetsPriceThreshold;
+
+    setIsManualPaymentSectionUnlocked(shouldUnlockPayment);
+
+    // If payment section is newly unlocked, scroll to it
+    if (shouldUnlockPayment && !isManualPaymentSectionUnlocked && manualConfirmCheckboxRef.current) {
+      setTimeout(() => {
+        manualConfirmCheckboxRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    }
+  }, [manualFormValues, orderValidation, isManualPaymentSectionUnlocked]);
 
   // For the manual form, watch price and quantity to recalculate order value when they change
   const manualPrice = manualForm.watch("price");
@@ -580,11 +618,30 @@ export default function QuoteForm() {
                                 <Input
                                   placeholder="https://www.aliexpress.com/item/..."
                                   {...field}
-                                  className={productFetchLoading ? "pr-10" : ""}
+                                  className={`${productFetchLoading ? "pr-10" : ""} ${
+                                    isPaymentSectionUnlocked ? "border-green-500 focus:ring-green-500/30" : ""
+                                  }`}
+                                  onBlur={(e) => {
+                                    field.onBlur();
+                                    // Force product fetch on blur if URL is valid
+                                    const url = e.target.value;
+                                    if (url && url.startsWith('http') && url.includes('.') && url.length > 15) {
+                                      // If the URL is different from the previously processed one
+                                      if (url !== previousUrlRef.current) {
+                                        // Manually trigger product fetch
+                                        setDebouncedUrl(url);
+                                      }
+                                    }
+                                  }}
                                 />
                                 {productFetchLoading && (
                                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                  </div>
+                                )}
+                                {isPaymentSectionUnlocked && !productFetchLoading && (
+                                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                    <CheckCircle className="h-5 w-5 text-green-500" />
                                   </div>
                                 )}
                               </div>
@@ -601,14 +658,30 @@ export default function QuoteForm() {
                           <FormItem>
                             <FormLabel>Quantity</FormLabel>
                             <FormControl>
-                              <Input
-                                type="number"
-                                min="1"
-                                placeholder="Enter quantity"
-                                {...field}
-                                onChange={(e) => handleUpdateUrlQuantity(Number.parseInt(e.target.value) || 1)}
-                                value={field.value}
-                              />
+                              <div className="relative">
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  placeholder="Enter quantity"
+                                  {...field}
+                                  className={isPaymentSectionUnlocked ? "border-green-500 focus:ring-green-500/30" : ""}
+                                  onChange={(e) => handleUpdateUrlQuantity(Number.parseInt(e.target.value) || 1)}
+                                  onBlur={() => {
+                                    // Force validation on blur
+                                    if (productInfo) {
+                                      const validation = checkMinimumOrderAmount(productInfo.price, field.value);
+                                      setOrderValidation(validation);
+                                      setTotalOrderAmount(productInfo.price * field.value);
+                                    }
+                                  }}
+                                  value={field.value}
+                                />
+                                {isPaymentSectionUnlocked && (
+                                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                    <CheckCircle className="h-5 w-5 text-green-500" />
+                                  </div>
+                                )}
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -656,19 +729,21 @@ export default function QuoteForm() {
                             )}
                             <div className="flex justify-between font-semibold border-t pt-2 mt-1 dark:border-gray-700">
                               <span>Total Order Value:</span>
-                              <span>{formatCurrency(totalOrderAmount)}</span>
+                              <span className={orderValidation?.isValid ? "text-green-600 dark:text-green-400" : ""}>
+                                {formatCurrency(totalOrderAmount)}
+                              </span>
                             </div>
                           </div>
                         </div>
                       )}
 
-                      {orderValidation && !orderValidation.isValid && (
-                        <Alert variant="destructive">
-                          <ExclamationTriangleIcon className="h-4 w-4" />
-                          <AlertTitle>Order Value Too Low</AlertTitle>
-                          <AlertDescription>
-                            Order total is below the USD $500,000 minimum. You're currently short by {formatCurrency(orderValidation.shortfallAmount)}.
-                            Please adjust quantity or select a higher-value product.
+                      {productInfo && orderValidation && !orderValidation.isValid && (
+                        <Alert variant="destructive" className="bg-red-50 border-red-300 dark:bg-red-900/30 dark:border-red-800 warning-banner">
+                          <ExclamationTriangleIcon className="h-5 w-5 text-red-600 dark:text-red-400" />
+                          <AlertTitle className="text-red-800 dark:text-red-300 font-semibold">Order Value Too Low</AlertTitle>
+                          <AlertDescription className="text-red-700 dark:text-red-300">
+                            <p className="font-medium mb-1">Total order value must exceed $500,000 USD to access payment.</p>
+                            <p>Your current total: {formatCurrency(totalOrderAmount)} (short by {formatCurrency(orderValidation.shortfallAmount)})</p>
                           </AlertDescription>
                         </Alert>
                       )}
@@ -684,46 +759,53 @@ export default function QuoteForm() {
                         </Alert>
                       )}
 
-                      <FormField
-                        control={urlForm.control}
-                        name="confirmAccurate"
-                        render={({ field }) => (
-                          <FormItem ref={confirmCheckboxRef} className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 dark:border-gray-700">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                              <FormLabel>
-                                I confirm all info is accurate. The 12.5% service fee is non-refundable if incorrect.
-                              </FormLabel>
-                            </div>
-                          </FormItem>
-                        )}
-                      />
-
-                      <Button
-                        type="submit"
-                        className="w-full"
-                        disabled={
-                          isLoading ||
-                          productFetchLoading ||
-                          !isUrlFormValid ||
-                          (orderValidation && !orderValidation.isValid) ||
-                          (stockValidation && !stockValidation.isAvailable)
-                        }
+                      <div 
+                        className={`payment-section transition-all duration-300 ${!isPaymentSectionUnlocked ? 'opacity-50 pointer-events-none' : ''}`}
+                        ref={paymentSectionRef}
                       >
-                        {isLoading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Processing...
-                          </>
-                        ) : (
-                          "Continue to Shipping"
-                        )}
-                      </Button>
+                        <FormField
+                          control={urlForm.control}
+                          name="confirmAccurate"
+                          render={({ field }) => (
+                            <FormItem ref={confirmCheckboxRef} className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 dark:border-gray-700">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  disabled={!isPaymentSectionUnlocked}
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel>
+                                  I confirm all info is accurate. The 12.5% service fee is non-refundable if incorrect.
+                                </FormLabel>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+
+                        <Button
+                          type="submit"
+                          className="w-full mt-4"
+                          disabled={
+                            isLoading ||
+                            productFetchLoading ||
+                            !isUrlFormValid ||
+                            (orderValidation && !orderValidation.isValid) ||
+                            (stockValidation && !stockValidation.isAvailable) ||
+                            !isPaymentSectionUnlocked
+                          }
+                        >
+                          {isLoading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            "Continue to Shipping"
+                          )}
+                        </Button>
+                      </div>
                     </form>
                   </Form>
                 </CardContent>
@@ -777,13 +859,28 @@ export default function QuoteForm() {
                             <FormItem>
                               <FormLabel>Price (USD)</FormLabel>
                               <FormControl>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  placeholder="0.00"
-                                  {...field}
-                                  onChange={(e) => field.onChange(Number.parseFloat(e.target.value) || 0)}
-                                />
+                                <div className="relative">
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                    {...field}
+                                    className={isManualPaymentSectionUnlocked ? "border-green-500 focus:ring-green-500/30" : ""}
+                                    onChange={(e) => field.onChange(Number.parseFloat(e.target.value) || 0)}
+                                    onBlur={(e) => {
+                                      // Force validation on blur
+                                      const price = Number.parseFloat(e.target.value) || 0;
+                                      const validation = checkMinimumOrderAmount(price, manualQuantity || 1);
+                                      setOrderValidation(validation);
+                                      setTotalOrderAmount(price * (manualQuantity || 1));
+                                    }}
+                                  />
+                                  {isManualPaymentSectionUnlocked && (
+                                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                      <CheckCircle className="h-5 w-5 text-green-500" />
+                                    </div>
+                                  )}
+                                </div>
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -797,15 +894,30 @@ export default function QuoteForm() {
                             <FormItem>
                               <FormLabel>Quantity</FormLabel>
                               <FormControl>
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  step="1"
-                                  placeholder="0"
-                                  {...field}
-                                  onChange={(e) => handleUpdateManualQuantity(Number.parseInt(e.target.value) || 1)}
-                                  value={field.value}
-                                />
+                                <div className="relative">
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    placeholder="0"
+                                    {...field}
+                                    className={isManualPaymentSectionUnlocked ? "border-green-500 focus:ring-green-500/30" : ""}
+                                    onChange={(e) => handleUpdateManualQuantity(Number.parseInt(e.target.value) || 1)}
+                                    onBlur={(e) => {
+                                      // Force validation on blur
+                                      const quantity = Number.parseInt(e.target.value) || 1;
+                                      const validation = checkMinimumOrderAmount(manualPrice || 0, quantity);
+                                      setOrderValidation(validation);
+                                      setTotalOrderAmount((manualPrice || 0) * quantity);
+                                    }}
+                                    value={field.value}
+                                  />
+                                  {isManualPaymentSectionUnlocked && (
+                                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                      <CheckCircle className="h-5 w-5 text-green-500" />
+                                    </div>
+                                  )}
+                                </div>
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -827,19 +939,21 @@ export default function QuoteForm() {
                             </div>
                             <div className="flex justify-between font-semibold border-t pt-2 mt-1">
                               <span>Total Order Value:</span>
-                              <span>{formatCurrency(totalOrderAmount)}</span>
+                              <span className={orderValidation?.isValid ? "text-green-600 dark:text-green-400" : ""}>
+                                {formatCurrency(totalOrderAmount)}
+                              </span>
                             </div>
                           </div>
                         </div>
                       )}
 
                       {orderValidation && !orderValidation.isValid && (
-                        <Alert variant="destructive">
-                          <ExclamationTriangleIcon className="h-4 w-4" />
-                          <AlertTitle>Order Value Too Low</AlertTitle>
-                          <AlertDescription>
-                            Order total is below the USD $500,000 minimum. You're currently short by {formatCurrency(orderValidation.shortfallAmount)}.
-                            Please adjust quantity or select a higher-value product.
+                        <Alert variant="destructive" className="bg-red-50 border-red-300 dark:bg-red-900/30 dark:border-red-800 warning-banner">
+                          <ExclamationTriangleIcon className="h-5 w-5 text-red-600 dark:text-red-400" />
+                          <AlertTitle className="text-red-800 dark:text-red-300 font-semibold">Order Value Too Low</AlertTitle>
+                          <AlertDescription className="text-red-700 dark:text-red-300">
+                            <p className="font-medium mb-1">Total order value must exceed $500,000 USD to access payment.</p>
+                            <p>Your current total: {formatCurrency(totalOrderAmount)} (short by {formatCurrency(orderValidation.shortfallAmount)})</p>
                           </AlertDescription>
                         </Alert>
                       )}
@@ -878,40 +992,51 @@ export default function QuoteForm() {
                         )}
                       />
 
-                      <FormField
-                        control={manualForm.control}
-                        name="confirmAccurate"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 dark:border-gray-700">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                              <FormLabel>
-                                I confirm all info is accurate. The 12.5% service fee is non-refundable if incorrect.
-                              </FormLabel>
-                            </div>
-                          </FormItem>
-                        )}
-                      />
-
-                      <Button
-                        type="submit"
-                        className="w-full"
-                        disabled={isLoading || !isManualFormValid || (orderValidation && !orderValidation.isValid)}
+                      <div 
+                        className={`payment-section transition-all duration-300 ${!isManualPaymentSectionUnlocked ? 'opacity-50 pointer-events-none' : ''}`}
+                        ref={manualConfirmCheckboxRef}
                       >
-                        {isLoading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Processing...
-                          </>
-                        ) : (
-                          "Continue to Shipping"
-                        )}
-                      </Button>
+                        <FormField
+                          control={manualForm.control}
+                          name="confirmAccurate"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 dark:border-gray-700">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  disabled={!isManualPaymentSectionUnlocked}
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel>
+                                  I confirm all info is accurate. The 12.5% service fee is non-refundable if incorrect.
+                                </FormLabel>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+
+                        <Button
+                          type="submit"
+                          className="w-full mt-4"
+                          disabled={
+                            isLoading || 
+                            !isManualFormValid || 
+                            (orderValidation && !orderValidation.isValid) ||
+                            !isManualPaymentSectionUnlocked
+                          }
+                        >
+                          {isLoading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            "Continue to Shipping"
+                          )}
+                        </Button>
+                      </div>
                     </form>
                   </Form>
                 </CardContent>
