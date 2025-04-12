@@ -32,12 +32,12 @@
   }
 
   .dark {
-    /* Updated dark mode colors for better contrast and visual appeal */
-    --background: 0 0% 7%; /* #121212 - softer black background */
-    --foreground: 0 0% 88%; /* #E0E0E0 - softer white text */
+    /* Explicitly set dark mode colors according to specs */
+    --background: 0 0% 7%; /* Exact #121212 - softer black background */
+    --foreground: 0 0% 88%; /* Exact #E0E0E0 - softer white text */
 
-    --card: 0 0% 12%; /* #1E1E1E - slightly lighter than background */
-    --card-foreground: 0 0% 88%; /* #E0E0E0 - matching foreground */
+    --card: 0 0% 12%; /* Exact #1E1E1E - slightly lighter than background */
+    --card-foreground: 0 0% 88%; /* Exact #E0E0E0 - matching foreground */
 
     --popover: 0 0% 12%; /* #1E1E1E - match card */
     --popover-foreground: 0 0% 88%; /* #E0E0E0 - match foreground */
@@ -45,20 +45,20 @@
     --primary: 220 80% 60%; /* #3B82F6 - brighter blue that works on dark bg */
     --primary-foreground: 0 0% 100%; /* White text on primary buttons */
 
-    --secondary: 215 15% 15%; /* Slightly blue-tinted dark for secondary elements */
-    --secondary-foreground: 0 0% 95%; /* Light text on secondary elements */
+    --secondary: 0 0% 12%; /* #1E1E1E - match card color */
+    --secondary-foreground: 0 0% 88%; /* #E0E0E0 - match foreground */
 
-    --muted: 210 8% 18%; /* #23272F - subtle blue-gray for muted areas */
-    --muted-foreground: 215 15% 65%; /* #A1AFC0 - muted text with blue tint */
+    --muted: 0 0% 15%; /* #262626 - slightly lighter than card */
+    --muted-foreground: 0 0% 60%; /* #999999 - muted text */
 
-    --accent: 217 10% 25%; /* Slightly blue-tinted accent bg */
-    --accent-foreground: 0 0% 95%; /* Light text on accent */
+    --accent: 220 80% 60%; /* Match primary */
+    --accent-foreground: 0 0% 100%; /* White text on accent */
 
     --destructive: 0 70% 40%; /* Deeper red that works on dark */
     --destructive-foreground: 0 0% 95%; /* Light text on destructive */
 
-    --border: 217 10% 20%; /* #2D3748 - subtle borders */
-    --input: 215 15% 15%; /* Match secondary for input fields */
+    --border: 0 0% 15%; /* #262626 - subtle borders */
+    --input: 0 0% 12%; /* #1E1E1E - match card */
 
     --ring: 220 80% 60%; /* Match primary for focus rings */
 
@@ -95,11 +95,35 @@
     }
   }
 
+  /* Make sure dark mode background colors are explicitly set to override any inline styles */
+  .dark body {
+    @apply bg-[#121212] text-[#E0E0E0];
+  }
+
+  /* Fix gray sections in dark mode to match dark background */
+  .dark .bg-gray-50,
+  .dark .bg-gray-100,
+  .dark .bg-gray-200 {
+    @apply bg-[#121212];
+  }
+
+  /* Ensure card backgrounds match spec */
+  .dark .card,
+  .dark [class*="bg-card"] {
+    @apply bg-[#1E1E1E] border-[#262626];
+  }
+
+  /* Fix alert, banner, and other important UI components */
+  .dark .bg-gray-800,
+  .dark .bg-gray-900 {
+    @apply bg-[#1E1E1E];
+  }
+
   /* Improved focus states for dark mode */
   .dark input:focus,
   .dark textarea:focus,
   .dark select:focus {
-    @apply ring-2 ring-primary/50 ring-offset-1 ring-offset-background;
+    @apply ring-2 ring-primary/50 ring-offset-1 ring-offset-[#121212];
   }
 
   /* Fix checkbox appearance in dark mode */
@@ -117,12 +141,23 @@
   .dark input,
   .dark textarea,
   .dark select {
-    @apply bg-secondary border-border text-foreground placeholder:text-muted-foreground;
+    @apply bg-[#1E1E1E] border-[#262626] text-[#E0E0E0] placeholder:text-[#999999];
   }
 
   /* Improve card styling in dark mode */
   .dark .card {
-    @apply bg-card border-border shadow-md shadow-black/10;
+    @apply bg-[#1E1E1E] border-[#262626] shadow-md shadow-black/20;
+  }
+
+  /* Fix heading and text colors */
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    @apply text-[#E0E0E0];
+  }
+
+  .dark .text-gray-500,
+  .dark .text-gray-600,
+  .dark .text-gray-700 {
+    @apply text-[#999999];
   }
 
   /* Fix transition issues between light and dark mode */
@@ -132,12 +167,34 @@
   button,
   .checkbox,
   select,
-  textarea {
+  textarea,
+  section {
     @apply transition-colors duration-200;
   }
 
   /* Add subtle hover effect to cards in dark mode */
   .dark .card:hover {
     @apply border-primary/20;
+  }
+
+  /* Fix dark mode toggle appearance */
+  .dark [aria-label="Toggle dark mode"] {
+    @apply bg-[#262626] text-[#E0E0E0] hover:bg-[#333333];
+  }
+
+  /* Fix specific elements that may have hard-coded background colors */
+  .dark .bg-white {
+    @apply bg-[#1E1E1E];
+  }
+  
+  /* Fix product details section */
+  .dark .dark\:bg-gray-800\/50 {
+    @apply bg-[#1E1E1E]/90;
+  }
+
+  /* Fix dividers */
+  .dark .border-t,
+  .dark .border-b {
+    @apply border-[#262626];
   }
 }

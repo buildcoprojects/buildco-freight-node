@@ -943,14 +943,14 @@ export default function QuoteForm() {
   };
 
   return (
-    <section id="quote" className="w-full py-12 md:py-24 lg:py-32 bg-gray-50 dark:bg-gray-900">
+    <section id="quote" className="w-full py-12 md:py-24 lg:py-32 bg-gray-50 dark:bg-dark-bg">
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center space-y-4 text-center">
           <div className="space-y-2">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl dark:text-gray-100">
+            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl dark:text-dark-text">
               Get Your Quote
             </h2>
-            <p className="max-w-[700px] text-gray-500 dark:text-gray-400 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+            <p className="max-w-[700px] text-gray-500 dark:text-dark-muted-text md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
               Enter your product details to get an instant quote for our freight forwarding service.
             </p>
 

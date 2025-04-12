@@ -55,7 +55,7 @@ function Header() {
               size="icon"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               aria-label="Toggle dark mode"
-              className="ml-2"
+              className="ml-2 dark:bg-dark-muted dark:hover:bg-opacity-80 dark:text-dark-text"
             >
               {theme === "dark" ? (
                 <Sun className="h-5 w-5" />

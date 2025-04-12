@@ -49,7 +49,13 @@ export default {
   				'3': 'hsl(var(--chart-3))',
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
-  			}
+  			},
+        // Explicit dark mode colors
+        'dark-bg': '#121212',
+        'dark-card': '#1E1E1E',
+        'dark-text': '#E0E0E0',
+        'dark-muted': '#262626',
+        'dark-muted-text': '#999999',
   		},
   		borderRadius: {
   			lg: 'var(--radius)',

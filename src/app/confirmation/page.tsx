@@ -12,10 +12,10 @@ function ConfirmationContent() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-background dark:bg-dark-bg">
       <div className="text-center">
-        <h1 className="text-3xl font-bold mb-4">Payment Confirmation</h1>
-        <p className="text-lg">Session ID: {sessionId || 'Loading...'}</p>
+        <h1 className="text-3xl font-bold mb-4 dark:text-dark-text">Payment Confirmation</h1>
+        <p className="text-lg dark:text-dark-text">Session ID: {sessionId || 'Loading...'}</p>
       </div>
     </div>
   );
@@ -23,7 +23,7 @@ function ConfirmationContent() {
 
 export default function ConfirmationPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background dark:bg-dark-bg text-foreground dark:text-dark-text">Loading...</div>}>
       <ConfirmationContent />
     </Suspense>
   );
