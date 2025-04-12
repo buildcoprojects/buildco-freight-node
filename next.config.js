@@ -1,29 +1,26 @@
-/** @type {import('next').NextConfig} */
+/**** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',  // Enable static site generation
-  distDir: 'out',
+  reactStrictMode: true,
   images: {
-    unoptimized: true, // Required for static export
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'source.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: '**.same-assets.com',
-      }
-    ],
+    domains: ['images.unsplash.com', 'ae01.alicdn.com'],
+    unoptimized: true
+  },
+  env: {
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+  },
+  output: 'export',
+  typescript: {
+    // !! WARN !!
+    // Dangerously allow production builds to successfully complete even if
+    // your project has type errors.
+    // !! WARN !!
+    ignoreBuildErrors: true,
   },
   eslint: {
-    ignoreDuringBuilds: true, // Skip ESLint checks during build
-  },
-  typescript: {
-    ignoreBuildErrors: true, // Skip TypeScript checks during build
-  },
-  compiler: {
-    // Enables tree-shaking and efficient production builds
-    removeConsole: process.env.NODE_ENV === 'production',
+    // Warning: This allows production builds to successfully complete even if
+    // your project has ESLint errors.
+    ignoreDuringBuilds: true,
   },
 };
 

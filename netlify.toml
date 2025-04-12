@@ -1,5 +1,5 @@
 [build]
-  command = "NEXT_SKIP_TYPECHECKING=1 NEXT_SKIP_LINTING=1 next build"
+  command = "npm run build"
   publish = "out"
 
 [build.environment]
@@ -18,9 +18,18 @@
     X-XSS-Protection = "1; mode=block"
 
 [[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+  
+[functions]
+  directory = ".netlify/functions"
+  node_bundler = "esbuild"
 
 [images]
-  remote_images = ["https://source.unsplash.com/*"]
+  remote_images = ["https://source.unsplash.com/*", "https://ae01.alicdn.com/*"]

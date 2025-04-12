@@ -3,7 +3,24 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const PaymentForm = ({ orderData, shippingData, onBack }) => {
+interface OrderData {
+  product: any;
+  quantity: number;
+  totalValue: number;
+}
+
+interface ShippingData {
+  email: string;
+  [key: string]: any;
+}
+
+interface PaymentFormProps {
+  orderData: OrderData;
+  shippingData: ShippingData;
+  onBack: () => void;
+}
+
+const PaymentForm = ({ orderData, shippingData, onBack }: PaymentFormProps) => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [includeInsurance, setIncludeInsurance] = useState(false);

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16'
+  apiVersion: '2025-03-31.basil'
 });
 
 export async function POST(request: NextRequest) {
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       checkoutUrl: session.url,
       sessionId: session.id
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Stripe Checkout Error:', err);
     return NextResponse.json(
       { error: 'Failed to create Stripe Checkout session' },
