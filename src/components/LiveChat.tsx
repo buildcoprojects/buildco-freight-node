@@ -12,7 +12,7 @@ export default function LiveChat() {
       s1.setAttribute("crossorigin", "*");
 
       const s0 = document.getElementsByTagName("script")[0];
-      if (s0 && s0.parentNode) {
+      if (s0?.parentNode) {
         s0.parentNode.insertBefore(s1, s0);
       } else {
         document.head.appendChild(s1);
@@ -29,7 +29,7 @@ export default function LiveChat() {
     // Cleanup function
     return () => {
       // Remove the widget if component unmounts
-      if (window.Tawk_API && window.Tawk_API.hideWidget) {
+      if (window.Tawk_API?.hideWidget) {
         window.Tawk_API.hideWidget();
       }
     };

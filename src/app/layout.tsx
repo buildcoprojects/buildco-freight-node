@@ -5,13 +5,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "sonner";
 import LiveChat from "@/components/LiveChat";
 import Script from "next/script";
-import { ThemeProvider } from "next-themes"; // Updated import
+import { ThemeProvider } from "@/components/ThemeProvider"; // Updated import
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Build Co Freight Node | Strategic Freight Forwarding via Australia",
-  description: "Bypass tariffs with our strategic freight routing service. Ship high-value goods from China through Australia to the US and save on import duties.",
+  description: "Route high-value Chinese goods into the U.S. without triggering tariffs. Our controlled logistics corridor provides compliant freight forwarding at U.S.-cleared cost.",
   icons: {
     icon: "/favicon.ico",
   },
@@ -30,9 +30,9 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
+          defaultTheme="dark" // Set dark mode as default
+          enableSystem={false} // Disable system theme
+          storageKey="buildco-freight-theme" // Set storage key for localStorage persistence
         >
           {children}
           <Toaster />

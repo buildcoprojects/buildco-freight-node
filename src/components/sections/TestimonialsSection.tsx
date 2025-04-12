@@ -49,15 +49,18 @@ export function TestimonialsSection() {
               <CardContent className="p-6 flex flex-col h-full">
                 <div className="flex-1">
                   <div className="flex mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <StarIcon key={i} className="h-5 w-5 text-yellow-500" />
-                    ))}
+                    {/* Replace dynamic map with static stars with unique keys */}
+                    <StarIcon key={`${testimonial.id}-star-1`} className="h-5 w-5 text-yellow-500" />
+                    <StarIcon key={`${testimonial.id}-star-2`} className="h-5 w-5 text-yellow-500" />
+                    <StarIcon key={`${testimonial.id}-star-3`} className="h-5 w-5 text-yellow-500" />
+                    <StarIcon key={`${testimonial.id}-star-4`} className="h-5 w-5 text-yellow-500" />
+                    <StarIcon key={`${testimonial.id}-star-5`} className="h-5 w-5 text-yellow-500" />
                   </div>
-                  <blockquote className="text-lg italic mb-4">"{testimonial.text}"</blockquote>
+                  <blockquote className="text-lg italic mb-4 dark:text-gray-200">"{testimonial.text}"</blockquote>
                 </div>
                 <div>
-                  <p className="font-semibold">{testimonial.name}</p>
-                  <p className="text-sm text-gray-500">{testimonial.role}, {testimonial.company}</p>
+                  <p className="font-semibold dark:text-gray-200">{testimonial.name}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{testimonial.role}, {testimonial.company}</p>
                 </div>
               </CardContent>
             </Card>

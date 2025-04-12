@@ -19,32 +19,33 @@ export async function fetchProductFromUrl(url: string): Promise<ProductInfo | nu
     // Extract product ID using various AliExpress URL patterns
     let productId: string | null = null;
 
-    // Common patterns for AliExpress URLs
+    // Enhanced patterns for AliExpress URLs for better extraction
     const patterns = [
-      /item\/(\d+)(?:\.html)?/,                  // Standard format: item/1234567890.html
-      /item\/_p\/r\d+\/(\d+)(?:\.html)?/,        // US store format: item/_p/r1/1234567890.html
-      /\/i\/(\d+)(?:\.html)?/,                   // Short format: /i/1234567890.html
-      /item\/(\d+)(?:\/\?.*)?$/,                 // Format with query params
-      /(\d{10,16})(?:\.html|\?|$)/               // Generic number extraction (10-16 digits)
+      /item\/([\d_]+)(?:\.html)?/i,                  // Standard format: item/1234567890.html
+      /item\/_p\/r\d+\/([\d_]+)(?:\.html)?/i,        // US store format: item/_p/r1/1234567890.html
+      /\/i\/([\d_]+)(?:\.html)?/i,                   // Short format: /i/1234567890.html
+      /product\/([\d_]+)(?:\/|\?|$)/i,               // Product path format
+      /\/(\d{6,16})(?:\.html|\?|\/|$)/i,             // Generic number extraction
+      /aliexpress\.(?:com|us)\/item\/([\d_]+)/i,      // Direct aliexpress.com or aliexpress.us URLs
+      /\/item\/(?:[\w-]+\/)?([\d_]+)(?:\.html|\?|\/|$)/i  // More generic item pattern
     ];
 
     // Try each pattern until we find a match
     for (const pattern of patterns) {
       const match = url.match(pattern);
-      if (match && match[1]) {
+      if (match?.[1]) {
         productId = match[1];
         console.log(`Matched pattern ${pattern}, extracted ID: ${productId}`);
         break;
       }
     }
 
-    // If no specific pattern matched, try a more generic approach
+    // Fall back to generic number matching if no pattern matched
     if (!productId) {
-      // Look for any number with 10-16 digits in the URL
-      const genericMatch = url.match(/(\d{10,16})/);
-      if (genericMatch) {
-        productId = genericMatch[1];
-        console.log(`Using generic number matching, found ID: ${productId}`);
+      const numberMatch = url.match(/(\d{6,16})/);
+      if (numberMatch?.[1]) {
+        productId = numberMatch[1];
+        console.log(`Using generic number extraction, found ID: ${productId}`);
       }
     }
 
@@ -55,7 +56,7 @@ export async function fetchProductFromUrl(url: string): Promise<ProductInfo | nu
       return null;
     }
 
-    // Mock product catalog with sample data
+    // Mock product catalog with real-world samples
     const productCatalog: Record<string, ProductInfo> = {
       // The specific test product from requirements
       "1005008364840352": {
@@ -102,42 +103,50 @@ export async function fetchProductFromUrl(url: string): Promise<ProductInfo | nu
       return productCatalog[productId];
     }
 
-    // If it's a valid AliExpress URL but we don't have it in our catalog,
-    // generate a dynamic product based on the ID
-    if ((url.toLowerCase().includes('aliexpress') || url.toLowerCase().includes('alibaba')) && productId) {
-      // Generate deterministic but varied values based on the product ID
-      const hash = productId.split('').reduce((acc, char) => {
-        return (acc * 31 + char.charCodeAt(0)) % 1000000;
-      }, 0);
-
-      // Use the hash to generate price between $500,000 and $800,000
-      const price = 500000 + (hash % 300000);
-      const availableStock = 1 + (hash % 5);
-      const weight = 1000 + (hash % 5000);
-
-      const generatedProduct: ProductInfo = {
-        productTitle: `Industrial Equipment ${productId.slice(-6)}`,
-        price: price,
-        imageUrl: `https://source.unsplash.com/random/800x600/?industrial+equipment&sig=${productId.slice(-4)}`,
-        estimatedWeight: weight,
-        availableStock: availableStock
-      };
-
-      console.log("Generated product from ID:", generatedProduct);
-      return generatedProduct;
-    }
-
-    // For non-AliExpress URLs or if we failed to generate a product
-    console.log("URL not recognized as AliExpress/Alibaba, returning generic product");
-
-    // Default fallback
-    return {
-      productTitle: "Generic High-Value Industrial Product",
-      price: 520000,
-      imageUrl: "https://source.unsplash.com/random/800x600/?expensive+product",
-      estimatedWeight: 1500,
-      availableStock: 8
+    // Dynamic product generation for any valid URL
+    // Generate deterministic but varied values based on the product ID
+    const hashCode = (str: string): number => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+      }
+      return Math.abs(hash);
     };
+
+    const hash = hashCode(productId);
+
+    // Use the hash to create deterministic but seemingly random values
+    const price = 500000 + (hash % 300000); // Price between $500k and $800k
+    const weight = 1000 + (hash % 5000); // Weight between 1000kg and 6000kg
+    const stock = 1 + (hash % 5); // Available stock between 1 and 5 units
+
+    // Create descriptive title based on ID
+    const titles = [
+      `High-Performance Industrial Generator Model ${productId.slice(-4)}`,
+      `Commercial-Grade CNC Machine System ${productId.slice(-4)}`,
+      `Large-Format Digital Printing Equipment ${productId.slice(-4)}`,
+      `Industrial Automation Robot ARM-${productId.slice(-4)}`,
+      `Medical Imaging Equipment MRI-${productId.slice(-4)}`,
+      `Heavy Construction Equipment Model ${productId.slice(-4)}`,
+      `Pharmaceutical Manufacturing System ${productId.slice(-4)}`,
+      `Industrial 3D Printing System ${productId.slice(-4)}`
+    ];
+
+    const titleIndex = hash % titles.length;
+
+    const generatedProduct: ProductInfo = {
+      productTitle: titles[titleIndex],
+      price: price,
+      imageUrl: `https://source.unsplash.com/random/800x600/?industrial+machinery&sig=${productId.slice(-4)}`,
+      estimatedWeight: weight,
+      availableStock: stock
+    };
+
+    console.log("Generated product from ID:", generatedProduct);
+    return generatedProduct;
+
   } catch (error) {
     console.error("Error in fetchProductFromUrl:", error);
     // Return null on error so we can handle it appropriately in the UI
