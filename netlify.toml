@@ -28,8 +28,9 @@
   status = 200
   
 [functions]
-  directory = ".netlify/functions"
+  directory = "netlify/functions"
   node_bundler = "esbuild"
+  included_files = ["node_modules/@sparticuz/chromium/**"]
 
 [images]
   remote_images = ["https://source.unsplash.com/*", "https://ae01.alicdn.com/*"]

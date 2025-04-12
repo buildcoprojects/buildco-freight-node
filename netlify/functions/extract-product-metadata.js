@@ -1,5 +1,6 @@
 // Netlify serverless function to extract product metadata from Chinese supplier websites
-const chromium = require('chrome-aws-lambda');
+// Use the newer @sparticuz/chromium package which is properly maintained
+const chromium = require('@sparticuz/chromium');
 const puppeteer = require('puppeteer-core');
 
 /**
@@ -51,14 +52,19 @@ exports.handler = async function(event, context) {
   try {
     console.log('Launching headless browser...');
     
-    // Browser launch options for AWS Lambda environment
+    // Browser launch options for Netlify environment using @sparticuz/chromium
     const executablePath = await chromium.executablePath;
     
     browser = await puppeteer.launch({
       args: chromium.args,
       executablePath,
       headless: chromium.headless,
-      defaultViewport: chromium.defaultViewport,
+      defaultViewport: {
+        width: 1280,
+        height: 720,
+        deviceScaleFactor: 1,
+      },
+      ignoreHTTPSErrors: true,
     });
 
     console.log('Browser launched successfully');

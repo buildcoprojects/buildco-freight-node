@@ -87,42 +87,77 @@ export function extractProductId(url: string): string | null {
 /**
  * Fetch product metadata using the Netlify serverless function
  * Falls back to client-side generation if the function fails
+ * 
+ * IMPORTANT: For production builds, we need to ensure this works
+ * both in development and production environments
  */
 export async function fetchProductMetadata(url: string): Promise<ProductInfo | null> {
   try {
-    console.log("Fetching product metadata from URL using Netlify function:", url);
+    console.log("Fetching product metadata from URL:", url);
     
-    // Call our Netlify serverless function to extract metadata
-    const response = await fetch('/.netlify/functions/extract-product-metadata', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ url }),
-    });
+    // Call the Netlify serverless function to extract real metadata
+    console.log("Calling extract-product-metadata function...");
     
-    if (!response.ok) {
-      throw new Error(`Failed to fetch metadata: ${response.status} ${response.statusText}`);
+    try {
+      const response = await fetch('/netlify/functions/extract-product-metadata', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url }),
+        // Add a reasonable timeout
+        signal: AbortSignal.timeout(15000) // 15 second timeout (scraping can take time)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Function failed: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log("Product data from function:", data);
+      
+      // Check if we got valid data back
+      if (data && data.productTitle && data.price) {
+        return data as ProductInfo;
+      } else {
+        throw new Error("Invalid data returned from function");
+      }
+    } catch (functionError) {
+      console.error("Netlify function error:", functionError);
+      
+      // Try alternative path (might be a path issue)
+      try {
+        console.log("Trying alternative function path...");
+        const altResponse = await fetch('/.netlify/functions/extract-product-metadata', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url }),
+          signal: AbortSignal.timeout(15000)
+        });
+        
+        if (!altResponse.ok) {
+          throw new Error(`Alternative path failed: ${altResponse.status}`);
+        }
+        
+        const altData = await altResponse.json();
+        console.log("Product data from alternative path:", altData);
+        
+        if (altData && altData.productTitle && altData.price) {
+          return altData as ProductInfo;
+        }
+      } catch (altError) {
+        console.error("Alternative path also failed:", altError);
+      }
+      
+      // If both paths fail, we don't fall back - we require the user to manually enter data
+      throw new Error("Could not extract product data from URL, please use manual entry");
     }
-    
-    const data = await response.json();
-    console.log("Product data from Netlify function:", data);
-    
-    // Check if we got valid data back
-    if (data && data.productTitle && data.price) {
-      return data as ProductInfo;
-    }
-    
-    // If the function didn't return valid data, fall back to local generation
-    console.warn("Netlify function returned invalid data, using fallback");
-    const productId = extractProductId(url) || Math.random().toString(36).substring(7);
-    return generateFallbackProduct(productId);
   } catch (error) {
-    console.error("Error fetching product metadata:", error);
-    
-    // Generate fallback product info if anything fails
-    const productId = extractProductId(url) || Math.random().toString(36).substring(7);
-    return generateFallbackProduct(productId);
+    console.error("Error in fetchProductMetadata:", error);
+    // We don't fall back to generated data - require manual entry instead
+    throw error;
   }
 }
 
@@ -177,36 +212,29 @@ function generateFallbackProduct(productId: string): ProductInfo {
 
 /**
  * Fetch product details from URL
- * Uses Netlify serverless function for real metadata extraction with fallback
+ * Uses Netlify serverless function for real metadata extraction
+ * Important: We don't fall back to generated data - we want real data only
  */
 export async function fetchProductFromUrl(url: string): Promise<ProductInfo | null> {
   try {
     console.log("Fetching product from URL:", url);
     
-    // Use the Netlify function-based metadata extraction with fallback
+    // This will throw an error if it can't fetch real data
     const product = await fetchProductMetadata(url);
     
-    if (product) {
-      console.log("Successfully fetched product from URL:", product);
-      return product;
-    }
-    
-    // If somehow that failed, try direct fallback generation
-    const productId = extractProductId(url);
-    
-    if (!productId) {
-      console.warn("Could not extract product ID from URL:", url);
-      return null;
-    }
-    
-    // Generate fallback product
-    const fallbackProduct = generateFallbackProduct(productId);
-    console.log("Generated fallback product:", fallbackProduct);
-    
-    return fallbackProduct;
+    // Log success
+    console.log("Successfully fetched real product from URL:", product);
+    return product;
   } catch (error) {
+    // Log the error but don't provide fallback data
     console.error("Error in fetchProductFromUrl:", error);
-    return null;
+    
+    // We propagate the error
+    if (error instanceof Error) {
+      throw new Error(`Could not fetch product data: ${error.message}`);
+    } else {
+      throw new Error("Could not fetch product data, please use manual input");
+    }
   }
 }
 
