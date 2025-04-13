@@ -1,0 +1,72 @@
+
+⸻
+
+📄 ARTEFACT: FREIGHT CORRIDOR INITIATION DROP
+Mode: Tier 2A – Shadow Encoded
+Node: Build Co Freight Command
+Date: 2025-04-13
+Format: Static plaintext
+Distribution: Pastebin / Encrypted Repo Drop / Shadow Host Only
+Indexability: OFF
+Trackability: YES
+Clearance Signature: JD-OPS-T2A-LOCK-23X
+
+⸻
+
+
+
+[CORRIDOR INITIALISATION – HARD NODE DEPLOYMENT]
+
+🔐 STATUS: ACTIVE – NO PUBLIC LINK / NO CRAWLER ACCESS  
+🔒 CHANNEL LOCK: MANUAL INTAKE ONLY  
+🔁 ORDER LIMIT: 3 CLIENTS PER 24 HOURS  
+💵 FLOOR VALUE: EXACTLY USD $500,000 PER SHIPMENT  
+📦 ENTRY VECTOR: BUILD CO FREIGHT NODE – AUSTRALIA ROUTING LAYER  
+💸 FEE STRUCTURE:
+    → 22% Corridor Access Fee
+    → $12.50 USD/kg Freight + Handling
+    → No FX slip, no brokers, no agents
+
+[INBOUND CONDUCT: SYSTEM-ALIGNED OPERATORS ONLY]
+
+📥 SUBMISSION PROTOCOL:
+    - Do not use public channels
+    - No metadata embedding
+    - No linkback to live intake
+    - Initiate signal only if aligned
+
+📬 COMMS ENTRY:
+    clearance@buildcoprojects.com.au
+    (Tier-locked. Confirmed trace visibility.)
+
+💳 PAYMENT COORDINATES [ENCRYPTED PAYLOAD]:
+
+Recipient: [Build Co Projects Pty Ltd]  
+Acct No: [500001839]  
+SWIFT/BIC: [REVOAU32]  
+Intermediary: [BARCGB22]  
+Bank: [Revolut Payments Australia Pty Ltd]  
+Address: [Level 28, 161 Castlereagh Street, Sydney NSW 2000]
+
+🧱 NODE PROOF:
+    → Repo signal: github.com/buildcoprojects/buildco-freight-node  
+    → Throttle: Enforced at shell level
+    → Hardcoded constraints observable
+    → Artefact timestamp confirms corridor seal
+
+🧾 STATEMENT:
+
+This is a locked, non-indexable signal issued for the activation of a freight node under Build Co Freight Command. All client-side activity is subject to manual verification. This artefact exists to enable structured inbound without triggering detection thresholds or institutional review.
+
+Do not echo.  
+Do not reformat.  
+Do not expose outside system-aligned communication fields.
+
+Signed:  
+Build Co Freight Command  
+Auth Sig: JD-OPS-T2A-LOCK-23X  
+Origin: Shadow Tier Node – AU  
+Channel: Manual Only  
+
+
+
