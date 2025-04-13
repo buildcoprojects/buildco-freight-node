@@ -87,9 +87,15 @@ export function ShippingSection({ productInfo, formData, setFormData, onSubmit }
     <div className="space-y-8">
       <Card>
         <CardHeader>
+<<<<<<< HEAD
+          <CardTitle>Construction Product Information</CardTitle>
+          <CardDescription>
+            Review your construction hardware details before proceeding
+=======
           <CardTitle>Product Information</CardTitle>
           <CardDescription>
             Review your product details before proceeding
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -109,6 +115,12 @@ export function ShippingSection({ productInfo, formData, setFormData, onSubmit }
             )}
             <div className="w-full md:w-2/3">
               <h3 className="text-lg font-semibold mb-2">{productInfo?.productTitle}</h3>
+<<<<<<< HEAD
+              {productInfo?.productCategory && (
+                <p className="text-sm text-muted-foreground mb-2">Category: {productInfo.productCategory}</p>
+              )}
+=======
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Price</p>
@@ -126,7 +138,11 @@ export function ShippingSection({ productInfo, formData, setFormData, onSubmit }
 
       <Card className="mt-6">
         <CardHeader>
+<<<<<<< HEAD
+          <CardTitle>Construction Site Delivery Address</CardTitle>
+=======
           <CardTitle>Delivery Address</CardTitle>
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
           <CardDescription>
             Enter your delivery address to calculate shipping options
           </CardDescription>
@@ -212,9 +228,15 @@ export function ShippingSection({ productInfo, formData, setFormData, onSubmit }
       {shippingOptions.length > 0 && (
         <Card className="mt-6">
           <CardHeader>
+<<<<<<< HEAD
+            <CardTitle>Construction Hardware Shipping Options</CardTitle>
+            <CardDescription>
+              Select your preferred shipping method for construction materials
+=======
             <CardTitle>Shipping Options</CardTitle>
             <CardDescription>
               Select your preferred shipping method
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -246,7 +268,11 @@ export function ShippingSection({ productInfo, formData, setFormData, onSubmit }
               </RadioGroup>
 
               <div className="text-sm text-muted-foreground mt-4">
+<<<<<<< HEAD
+                Shipping for construction hardware is calculated separately at cost + fixed handling margin
+=======
                 Shipping is calculated separately at cost + fixed handling margin
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
               </div>
 
               <Button

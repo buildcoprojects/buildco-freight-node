@@ -46,6 +46,17 @@ const couriers = [
 
 export function CourierModal({ isOpen, onClose }: CourierModalProps) {
   const [selectedCourier, setSelectedCourier] = useState<string | null>(null);
+<<<<<<< HEAD
+  const [mounted, setMounted] = useState(false);
+
+  // Mark component as mounted after initial render to avoid hydration issues
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Safe close handler that checks if onClose is defined
+  const handleClose = () => {
+=======
 
   // Add debug logging to monitor modal state
   useEffect(() => {
@@ -63,6 +74,7 @@ export function CourierModal({ isOpen, onClose }: CourierModalProps) {
   // Safe close handler that checks if onClose is defined
   const handleClose = () => {
     console.log("CourierModal handleClose called");
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
     if (typeof onClose === 'function') {
       onClose();
     } else {
@@ -78,19 +90,38 @@ export function CourierModal({ isOpen, onClose }: CourierModalProps) {
     onClose();
   };
 
+<<<<<<< HEAD
+  // Avoid rendering during SSR or if not mounted yet
+  if (!mounted) {
+    return null;
+  }
+
+  // Don't render if modal is not open
+  if (!isOpen) {
+=======
   // Ensure we only render the modal client-side and when isOpen is true
   if (typeof window === 'undefined' || !isOpen) {
     // Server-side or modal not open, render nothing
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
     return null;
   }
 
   return (
+<<<<<<< HEAD
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md dark:border-gray-700 dark:bg-gray-800">
+        <DialogHeader>
+          <DialogTitle className="dark:text-gray-100">Select Construction Shipping Partner</DialogTitle>
+          <DialogDescription className="dark:text-gray-400">
+            Your construction hardware shipment will be processed through one of our trusted partners.
+=======
     <Dialog open={isOpen} onOpenChange={() => isOpen && handleClose()}>
       <DialogContent className="sm:max-w-md dark:border-gray-700 dark:bg-gray-800">
         <DialogHeader>
           <DialogTitle className="dark:text-gray-100">Select Shipping Partner</DialogTitle>
           <DialogDescription className="dark:text-gray-400">
             Your order will be processed through one of our trusted partners.
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
           </DialogDescription>
         </DialogHeader>
 

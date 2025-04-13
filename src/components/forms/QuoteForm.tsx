@@ -4,11 +4,24 @@ import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type * as z from "zod";
+<<<<<<< HEAD
+=======
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+<<<<<<< HEAD
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { type FreightFormValues, manualInputSchema } from "@/lib/types/form";
+import { checkMinimumOrderAmount } from "@/lib/api/product";
+import { ShippingSection } from "../sections/ShippingSection";
+import { CostSummary } from "../sections/CostSummary";
+import { toast } from "sonner";
+import { Loader2, CheckCircle, ShieldAlert } from "lucide-react";
+=======
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,21 +31,35 @@ import { ShippingSection } from "../sections/ShippingSection";
 import { CostSummary } from "../sections/CostSummary";
 import { toast } from "sonner";
 import { Loader2, CheckCircle } from "lucide-react";
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { canSubmit } from "@/lib/api/submissionTracker";
 import { CourierModal } from "@/components/ui/courier-modal";
+<<<<<<< HEAD
+import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+export default function QuoteForm() {
+  // We only need manual form functionality
+  const [isLoading, setIsLoading] = useState(false);
+=======
 
 export default function QuoteForm() {
   const [formType, setFormType] = useState<"url" | "manual">("url");
   const [isLoading, setIsLoading] = useState(false);
   const [productFetchLoading, setProductFetchLoading] = useState(false);
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
   const [productInfo, setProductInfo] = useState<{
     productTitle: string;
     price: number;
     imageUrl: string;
     estimatedWeight: number;
     availableStock?: number;
+<<<<<<< HEAD
+    productCategory?: string;
+=======
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
   } | null>(null);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [formData, setFormData] = useState<Partial<FreightFormValues>>({});
@@ -41,6 +68,25 @@ export default function QuoteForm() {
     isValid: boolean;
     shortfallAmount: number;
   } | null>(null);
+<<<<<<< HEAD
+  const [totalOrderAmount, setTotalOrderAmount] = useState<number>(0);
+  const [submissionStatus, setSubmissionStatus] = useState(() => canSubmit());
+  const [showCourierModal, setShowCourierModal] = useState(false);
+
+  // Add state to handle client-side rendering
+  const [isClient, setIsClient] = useState(false);
+
+  // Add reference for scrolling
+  const confirmCheckboxRef = useRef<HTMLDivElement>(null);
+
+  // Add state to track form validity
+  const [isManualFormValid, setIsManualFormValid] = useState(false);
+
+  // Add state to track payment section visibility
+  const [isManualPaymentSectionUnlocked, setIsManualPaymentSectionUnlocked] = useState(false);
+
+  // Initialize form
+=======
   const [stockValidation, setStockValidation] = useState<{
     isAvailable: boolean;
     availableStock: number;
@@ -94,11 +140,16 @@ export default function QuoteForm() {
     },
   });
 
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
   const manualForm = useForm<z.infer<typeof manualInputSchema>>({
     resolver: zodResolver(manualInputSchema),
     defaultValues: {
       formType: "manual",
       supplierName: "",
+<<<<<<< HEAD
+      productCategory: "",
+=======
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
       productDescription: "",
       price: 0,
       quantity: 1,
@@ -120,6 +171,22 @@ export default function QuoteForm() {
   });
 
   // Watch form values to check validity
+<<<<<<< HEAD
+  const manualFormValues = manualForm.watch();
+  const manualPrice = manualForm.watch("price");
+  const manualQuantity = manualForm.watch("quantity");
+
+  // Set isClient to true after component mounts
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Check submission limits on component load
+  useEffect(() => {
+    const status = canSubmit();
+    setSubmissionStatus(status);
+  }, []);
+=======
   const urlFormValues = urlForm.watch();
   const manualFormValues = manualForm.watch();
   const productUrl = urlForm.watch("productUrl");
@@ -310,11 +377,16 @@ export default function QuoteForm() {
   // Manual form payment section state
   const [isManualPaymentSectionUnlocked, setIsManualPaymentSectionUnlocked] = useState(false);
   const manualConfirmCheckboxRef = useRef<HTMLDivElement>(null);
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
 
   // Check manual form validity and handle progressive disclosure
   useEffect(() => {
     const {
       supplierName,
+<<<<<<< HEAD
+      productCategory,
+=======
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
       productDescription,
       price,
       quantity,
@@ -323,17 +395,53 @@ export default function QuoteForm() {
       confirmAccurate
     } = manualFormValues;
 
+<<<<<<< HEAD
+    // Calculate order total
+    const totalAmount = (price || 0) * (quantity || 1);
+    setTotalOrderAmount(totalAmount);
+
+    // Check if order meets minimum threshold
+    const validation = checkMinimumOrderAmount(price || 0, quantity || 1);
+    setOrderValidation(validation);
+
+    // Form is valid when all required fields are filled and order value meets minimum
+    const formFieldsValid =
+      !!supplierName &&
+      !!productCategory && // Add productCategory validation
+=======
     // IMPORTANT: For testing purposes, we're not enforcing the price threshold
     // This ensures the form can proceed during testing
     const meetsPriceThreshold = true; // Always pass for testing
 
     const formFieldsValid =
       !!supplierName &&
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
       !!productDescription &&
       price > 0 &&
       quantity > 0 &&
       estimatedWeight > 0 &&
       !!shippingFromCity &&
+<<<<<<< HEAD
+      confirmAccurate &&
+      validation.isValid; // Enforce minimum order value
+
+    setIsManualFormValid(formFieldsValid);
+
+    // Set payment section visibility based on form completeness
+    const minFieldsComplete =
+      !!supplierName &&
+      !!productCategory && // Add productCategory check
+      !!productDescription &&
+      price > 0 &&
+      quantity > 0;
+
+    setIsManualPaymentSectionUnlocked(minFieldsComplete);
+
+    // If payment section is newly unlocked, scroll to it
+    if (minFieldsComplete && !isManualPaymentSectionUnlocked && confirmCheckboxRef.current) {
+      setTimeout(() => {
+        confirmCheckboxRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+=======
       confirmAccurate;
       // Removed meetsPriceThreshold check for testing
 
@@ -351,11 +459,23 @@ export default function QuoteForm() {
     if (shouldUnlockPayment && !isManualPaymentSectionUnlocked && manualConfirmCheckboxRef.current) {
       setTimeout(() => {
         manualConfirmCheckboxRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
       }, 300);
     }
   }, [manualFormValues, isManualPaymentSectionUnlocked]);
 
   // For the manual form, watch price and quantity to recalculate order value when they change
+<<<<<<< HEAD
+  useEffect(() => {
+    try {
+      const validation = checkMinimumOrderAmount(manualPrice || 0, manualQuantity || 1);
+      setOrderValidation(validation);
+      setTotalOrderAmount((manualPrice || 0) * (manualQuantity || 1));
+    } catch (error) {
+      console.error("Error in manual validation effect:", error);
+    }
+  }, [manualPrice, manualQuantity]);
+=======
   const manualPrice = manualForm.watch("price");
   const manualQuantity = manualForm.watch("quantity");
 
@@ -397,6 +517,7 @@ export default function QuoteForm() {
       }
     }
   }, [formType, manualPrice, manualQuantity]);
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
 
   // Update submission status whenever user returns to form
   useEffect(() => {
@@ -405,6 +526,8 @@ export default function QuoteForm() {
     }
   }, [step]);
 
+<<<<<<< HEAD
+=======
   const handleUrlFormSubmit = async (data: z.infer<typeof urlUploadSchema>) => {
     const currentSubmissionStatus = canSubmit();
     if (!currentSubmissionStatus.allowed) {
@@ -503,6 +626,7 @@ export default function QuoteForm() {
     }
   };
 
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
   const handleManualFormSubmit = async (data: z.infer<typeof manualInputSchema>) => {
     const currentSubmissionStatus = canSubmit();
     if (!currentSubmissionStatus.allowed) {
@@ -520,7 +644,11 @@ export default function QuoteForm() {
       setTotalOrderAmount(data.price * data.quantity);
 
       if (!validation.isValid) {
+<<<<<<< HEAD
+        toast.error("Shipment total is below the minimum requirement of $500,000");
+=======
         toast.error("Order total is below the minimum requirement of $500,000");
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
         setIsLoading(false);
         return;
       }
@@ -529,8 +657,14 @@ export default function QuoteForm() {
       setProductInfo({
         productTitle: data.productDescription,
         price: data.price,
+<<<<<<< HEAD
+        imageUrl: data.productImage || "https://source.unsplash.com/random/800x600/?construction",
+        estimatedWeight: data.estimatedWeight,
+        productCategory: data.productCategory
+=======
         imageUrl: data.productImage || "https://source.unsplash.com/random/800x600/?product",
         estimatedWeight: data.estimatedWeight,
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
       });
 
       // Save form data for later steps
@@ -552,15 +686,26 @@ export default function QuoteForm() {
 
   const handleCloseCourierModal = () => {
     console.log("Closing courier modal and advancing to shipping step");
+<<<<<<< HEAD
+
+    // First hide the modal
+    setShowCourierModal(false);
+
+=======
     
     // First hide the modal
     setShowCourierModal(false);
     
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
     // Then proceed directly to the shipping step
     // Do this in the next tick to ensure state updates properly
     setTimeout(() => {
       setStep(2);
+<<<<<<< HEAD
+      toast.success("Shipment information verified, proceeding to shipping options");
+=======
       toast.success("Product information verified, proceeding to shipping options");
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
     }, 50);
   };
 
@@ -580,6 +725,8 @@ export default function QuoteForm() {
     }).format(amount);
   };
 
+<<<<<<< HEAD
+=======
   const handleUpdateUrlQuantity = (value: number) => {
     urlForm.setValue("quantity", value);
     if (productInfo) {
@@ -593,6 +740,7 @@ export default function QuoteForm() {
     }
   };
 
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
   const handleUpdateManualQuantity = (value: number) => {
     manualForm.setValue("quantity", value);
     const validation = checkMinimumOrderAmount(manualPrice || 0, value);
@@ -600,6 +748,52 @@ export default function QuoteForm() {
     setTotalOrderAmount((manualPrice || 0) * value);
   };
 
+<<<<<<< HEAD
+  const renderProductCategoryField = () => {
+    // Only render the Select component on the client side
+    if (!isClient) {
+      return (
+        <FormItem>
+          <FormLabel>Product Category</FormLabel>
+          <Skeleton className="h-10 w-full" />
+          <FormMessage />
+        </FormItem>
+      );
+    }
+
+    return (
+      <FormField
+        control={manualForm.control}
+        name="productCategory"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Product Category</FormLabel>
+            <Select onValueChange={field.onChange} value={field.value}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a construction category" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="lighting">Lighting</SelectItem>
+                <SelectItem value="hvac">HVAC</SelectItem>
+                <SelectItem value="structural_steel">Structural Steel</SelectItem>
+                <SelectItem value="framing_kits">Framing Kits</SelectItem>
+                <SelectItem value="tools">Tools</SelectItem>
+                <SelectItem value="fixings">Fixings</SelectItem>
+                <SelectItem value="prefab_panels">Prefab Panels</SelectItem>
+                <SelectItem value="other">Other Construction Hardware</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    );
+  };
+
+=======
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
   const renderFormStep = () => {
     if (step === 1 && !submissionStatus.allowed) {
       return (
@@ -608,9 +802,15 @@ export default function QuoteForm() {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900">
               <ExclamationTriangleIcon className="h-6 w-6 text-amber-600 dark:text-amber-300" />
             </div>
+<<<<<<< HEAD
+            <CardTitle>Construction Corridor Intake Limit Reached</CardTitle>
+            <CardDescription>
+              This construction corridor intake window has reached its temporary limit. Please check back once the next signal is issued.
+=======
             <CardTitle>Corridor Intake Limit Reached</CardTitle>
             <CardDescription>
               This corridor intake window has reached its temporary limit. Please check back once the next signal is issued.
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
             </CardDescription>
           </CardHeader>
           <CardContent className="mt-4">
@@ -628,6 +828,65 @@ export default function QuoteForm() {
     switch (step) {
       case 1:
         return (
+<<<<<<< HEAD
+          <Card className="dark:border-gray-700">
+            <CardHeader>
+              <CardTitle>Construction Shipment Information</CardTitle>
+              <CardDescription>
+                Enter your construction hardware shipment details below for routing through our secured corridor
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...manualForm}>
+                <form onSubmit={manualForm.handleSubmit(handleManualFormSubmit)} className="space-y-6">
+                  <FormField
+                    control={manualForm.control}
+                    name="supplierName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Supplier Name</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Supplier name"
+                            {...field}
+                            aria-label="Supplier Name"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {renderProductCategoryField()}
+
+                  <FormField
+                    control={manualForm.control}
+                    name="productDescription"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Construction Product Description</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Describe the construction product"
+                            {...field}
+                            aria-label="Construction Product Description"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <FormField
+                      control={manualForm.control}
+                      name="price"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Unit Price (USD)</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+=======
           <Tabs
             defaultValue="url"
             value={formType}
@@ -1021,11 +1280,198 @@ export default function QuoteForm() {
                           <FormItem>
                             <FormLabel>Estimated Weight (kg)</FormLabel>
                             <FormControl>
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
                               <Input
                                 type="number"
                                 step="0.01"
                                 placeholder="0.00"
                                 {...field}
+<<<<<<< HEAD
+                                className={isManualPaymentSectionUnlocked ? "border-green-500 focus:ring-green-500/30" : ""}
+                                onChange={(e) => field.onChange(Number.parseFloat(e.target.value) || 0)}
+                                onBlur={(e) => {
+                                  // Force validation on blur
+                                  const price = Number.parseFloat(e.target.value) || 0;
+                                  const validation = checkMinimumOrderAmount(price, manualQuantity || 1);
+                                  setOrderValidation(validation);
+                                  setTotalOrderAmount(price * (manualQuantity || 1));
+                                }}
+                                aria-label="Unit Price in USD"
+                              />
+                              {isManualPaymentSectionUnlocked && (
+                                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                  <CheckCircle className="h-5 w-5 text-green-500" />
+                                </div>
+                              )}
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={manualForm.control}
+                      name="quantity"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Quantity</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input
+                                type="number"
+                                min="1"
+                                step="1"
+                                placeholder="0"
+                                {...field}
+                                className={isManualPaymentSectionUnlocked ? "border-green-500 focus:ring-green-500/30" : ""}
+                                onChange={(e) => handleUpdateManualQuantity(Number.parseInt(e.target.value) || 1)}
+                                onBlur={(e) => {
+                                  // Force validation on blur
+                                  const quantity = Number.parseInt(e.target.value) || 1;
+                                  const validation = checkMinimumOrderAmount(manualPrice || 0, quantity);
+                                  setOrderValidation(validation);
+                                  setTotalOrderAmount((manualPrice || 0) * quantity);
+                                }}
+                                value={field.value}
+                                aria-label="Quantity"
+                              />
+                              {isManualPaymentSectionUnlocked && (
+                                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                  <CheckCircle className="h-5 w-5 text-green-500" />
+                                </div>
+                              )}
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {(manualPrice > 0 || manualQuantity > 0) && (
+                    <div className="rounded-lg border p-4 mt-4 dark:border-gray-700 dark:bg-gray-800/50">
+                      <h3 className="text-sm font-medium mb-2">Shipment Summary</h3>
+                      <div className="text-sm space-y-2">
+                        <div className="flex justify-between">
+                          <span>Unit Price:</span>
+                          <span>{formatCurrency(manualPrice || 0)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Quantity:</span>
+                          <span>{manualQuantity || 1}</span>
+                        </div>
+                        <div className="flex justify-between font-semibold border-t pt-2 mt-1 dark:border-gray-700">
+                          <span>Total Shipment Value:</span>
+                          <span className={orderValidation?.isValid ? "text-green-600 dark:text-green-400" : ""}>
+                            {formatCurrency(totalOrderAmount)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {orderValidation && !orderValidation.isValid && (
+                    <Alert variant="destructive" className="bg-red-50 border-red-300 dark:bg-red-900/30 dark:border-red-800 warning-banner">
+                      <ExclamationTriangleIcon className="h-5 w-5 text-red-600 dark:text-red-400" />
+                      <AlertTitle className="text-red-800 dark:text-red-300 font-semibold">Shipment Value Too Low</AlertTitle>
+                      <AlertDescription className="text-red-700 dark:text-red-300">
+                        <p className="font-medium mb-1">Total shipment value must exceed $500,000 USD to access this routing corridor.</p>
+                        <p>Your current total: {formatCurrency(totalOrderAmount)} (short by {formatCurrency(orderValidation.shortfallAmount)})</p>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <FormField
+                    control={manualForm.control}
+                    name="estimatedWeight"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Estimated Weight (kg)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            {...field}
+                            onChange={(e) => field.onChange(Number.parseFloat(e.target.value) || 0)}
+                            aria-label="Estimated Weight in kilograms"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={manualForm.control}
+                    name="shippingFromCity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Shipping From City</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g., Shenzhen"
+                            {...field}
+                            aria-label="Shipping From City"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div
+                    className={`payment-section transition-all duration-300 ${!isManualPaymentSectionUnlocked ? 'opacity-50 pointer-events-none' : ''}`}
+                    ref={confirmCheckboxRef}
+                  >
+                    <FormField
+                      control={manualForm.control}
+                      name="confirmAccurate"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 dark:border-gray-700">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              disabled={!isManualPaymentSectionUnlocked}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>
+                              I confirm all information is accurate. Submission includes a non-refundable processing fee. Final service cost will be confirmed upon review.
+                            </FormLabel>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+
+                    <Button
+                      type="submit"
+                      className="w-full mt-4"
+                      disabled={
+                        isLoading ||
+                        !manualFormValues.confirmAccurate ||
+                        !orderValidation?.isValid // Ensure order meets minimum value
+                      }
+                      aria-live="polite"
+                      aria-busy={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <span>Processing...</span>
+                        </>
+                      ) : (
+                        <span>Continue to Shipping</span>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+=======
                                 onChange={(e) => field.onChange(Number.parseFloat(e.target.value) || 0)}
                               />
                             </FormControl>
@@ -1113,6 +1559,7 @@ export default function QuoteForm() {
               </Card>
             </TabsContent>
           </Tabs>
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
         );
 
       case 2:
@@ -1143,6 +1590,20 @@ export default function QuoteForm() {
         <div className="flex flex-col items-center space-y-4 text-center">
           <div className="space-y-2">
             <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl dark:text-dark-text">
+<<<<<<< HEAD
+              Submit Construction Shipment
+            </h2>
+            <p className="max-w-[700px] text-gray-500 dark:text-dark-muted-text md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+              Enter your construction shipment details to access our cross-jurisdictional routing system.
+            </p>
+
+            <div className="flex items-center justify-center mt-4 text-amber-700 dark:text-amber-400">
+              <ShieldAlert className="h-5 w-5 mr-2" />
+              <p className="text-sm font-medium">
+                This service is available for construction shipments of $500,000 USD or more only.
+              </p>
+            </div>
+=======
               Reroute Your Order Now
             </h2>
             <p className="max-w-[700px] text-gray-500 dark:text-dark-muted-text md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
@@ -1152,6 +1613,7 @@ export default function QuoteForm() {
             <p className="text-red-600 dark:text-red-400 font-semibold mt-4 text-center">
               🔒 This service is available for orders of $500,000 USD or more only.
             </p>
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
           </div>
         </div>
 
@@ -1160,6 +1622,17 @@ export default function QuoteForm() {
         </div>
       </div>
 
+<<<<<<< HEAD
+      {isClient && (
+        <CourierModal
+          isOpen={showCourierModal}
+          onClose={handleCloseCourierModal}
+        />
+      )}
+    </section>
+  );
+}
+=======
       <CourierModal
         isOpen={showCourierModal}
         onClose={handleCloseCourierModal}
@@ -1167,3 +1640,4 @@ export default function QuoteForm() {
     </section>
   );
 }
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869

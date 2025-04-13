@@ -27,6 +27,10 @@ export const urlUploadSchema = z.object({
 export const manualInputSchema = z.object({
   formType: z.literal("manual"),
   supplierName: z.string().min(1, "Supplier name is required"),
+<<<<<<< HEAD
+  productCategory: z.string().min(1, "Product category is required"), // Added product category field
+=======
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
   productDescription: z.string().min(1, "Product description is required"),
   price: z.number().min(0.01, "Price must be greater than 0"),
   quantity: z.number().min(1, "Quantity must be at least 1"),
@@ -66,6 +70,10 @@ export interface ProductInfo {
   imageUrl: string;
   estimatedWeight: number;
   availableStock?: number; // Add available stock property
+<<<<<<< HEAD
+  productCategory?: string; // Add product category property
+=======
+>>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
 }
 
 export interface ShippingOption {
