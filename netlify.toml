@@ -1,9 +1,5 @@
 [build]
-<<<<<<< HEAD
   command = "bun run build"
-=======
-  command = "npm run build"
->>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
   publish = "out"
 
 [build.environment]
@@ -12,48 +8,10 @@
   NEXT_SKIP_TYPECHECKING = "1"
   NEXT_SKIP_LINTING = "1"
 
-[[headers]]
-  for = "/*"
-  [headers.values]
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*; font-src 'self' data:; connect-src 'self' https://api.stripe.com;"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    X-Content-Type-Options = "nosniff"
-    X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
-
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-<<<<<<< HEAD
-
-=======
-  
->>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
   included_files = ["node_modules/@sparticuz/chromium/**"]
 
 [images]
-<<<<<<< HEAD
-  remote_images = [
-    "https://source.unsplash.com/*",
-    "https://ae01.alicdn.com/*",
-    "https://images.unsplash.com/*",
-    "https://plus.unsplash.com/*",
-    "https://source.unsplash.com/random/800x600/?construction",
-    "https://assets.usesi.com/*",
-    "https://www.clarkdietrich.com/*",
-    "https://thumbs.dreamstime.com/*",
-    "https://c8.alamy.com/*",
-    "https://st2.depositphotos.com/*"
-  ]
-=======
-  remote_images = ["https://source.unsplash.com/*", "https://ae01.alicdn.com/*"]
->>>>>>> 340e3cc1d6d4db7967a57a80b837e2771c737869
+  remote_images = ["https://source.unsplash.com/*", "https://ae01.alicdn.com/*", "https://images.unsplash.com/*", "https://plus.unsplash.com/*", "https://source.unsplash.com/random/800x600/?construction", "https://assets.usesi.com/*", "https://www.clarkdietrich.com/*", "https://thumbs.dreamstime.com/*", "https://c8.alamy.com/*", "https://st2.depositphotos.com/*"]
